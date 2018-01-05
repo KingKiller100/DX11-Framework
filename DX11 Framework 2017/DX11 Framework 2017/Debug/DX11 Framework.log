@@ -1,0 +1,10 @@
+﻿  Application.cpp
+c:\users\karel\documents\k drizzle\games programming\second year\further fundamentals of games & concepts\dx11 framework 2017\dx11 framework 2017\application.cpp(94): warning C4316: 'Camera': object allocated on the heap may not be aligned 16
+c:\users\karel\documents\k drizzle\games programming\second year\further fundamentals of games & concepts\dx11 framework 2017\dx11 framework 2017\application.cpp(98): warning C4244: 'argument': conversion from 'int' to 'float', possible loss of data
+c:\users\karel\documents\k drizzle\games programming\second year\further fundamentals of games & concepts\dx11 framework 2017\dx11 framework 2017\application.cpp(335): warning C4838: conversion from 'double' to 'LONG' requires a narrowing conversion
+c:\users\karel\documents\k drizzle\games programming\second year\further fundamentals of games & concepts\dx11 framework 2017\dx11 framework 2017\application.cpp(335): warning C4244: 'initializing': conversion from 'double' to 'LONG', possible loss of data
+c:\users\karel\documents\k drizzle\games programming\second year\further fundamentals of games & concepts\dx11 framework 2017\dx11 framework 2017\application.cpp(646): warning C4244: 'argument': conversion from 'double' to 'float', possible loss of data
+c:\users\karel\documents\k drizzle\games programming\second year\further fundamentals of games & concepts\dx11 framework 2017\dx11 framework 2017\application.cpp(715): warning C4238: nonstandard extension used: class rvalue used as lvalue
+c:\users\karel\documents\k drizzle\games programming\second year\further fundamentals of games & concepts\dx11 framework 2017\dx11 framework 2017\application.cpp(718): warning C4238: nonstandard extension used: class rvalue used as lvalue
+  DX11 Framework.vcxproj -> C:\Users\Karel\Documents\K Drizzle\Games Programming\Second Year\Further Fundamentals of Games & Concepts\DX11 Framework 2017\DX11 Framework 2017\Debug\DX11 Framework.exe
+  DX11 Framework.vcxproj -> C:\Users\Karel\Documents\K Drizzle\Games Programming\Second Year\Further Fundamentals of Games & Concepts\DX11 Framework 2017\DX11 Framework 2017\Debug\DX11 Framework.pdb (Full PDB)
