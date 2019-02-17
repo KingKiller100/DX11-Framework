@@ -9,14 +9,14 @@ class Camera
 {
 private:
 	// Initialize the view matrix
-	XMVECTOR Eye;
-	XMVECTOR At;
-	XMVECTOR Up;
-	XMFLOAT4X4 _view;
-	XMFLOAT4X4 _projection;
+	XMVECTOR eye;
+	XMVECTOR at;
+	XMVECTOR up;
+	XMFLOAT4X4 view;
+	XMFLOAT4X4 projection;
 
 	// Camera position in world space
-	XMFLOAT3 posW; 	
+	XMFLOAT3 worldPosition; 	
 	XMFLOAT3 atPos;
 
 	UINT _WindowHeight;
@@ -30,16 +30,9 @@ private:
 
 	float rotationX, rotationY, rotationZ; 
 
-public:
-	Camera(UINT windowHeight, UINT windowWidth);
-	void Release();
 
+private:
 	void CreateCamera();
-	void UpdateFrameTimer(float time);
-
-	// Camera Movement method
-	void CameraMovement();
-
 
 	void ForwardMovement();
 	void BackwardMovement();
@@ -50,16 +43,25 @@ public:
 	void UpwardTurn();
 	void DownwardTurn();
 
+public:
+	Camera(UINT windowHeight, UINT windowWidth);
+	void Release();
+
+
+	void UpdateFrameTimer(float time);
+	// Camera Movement method
+	void CameraMovement();
+
 	// Variables Getters & Setters 
 	void SetWorldPosition(XMFLOAT3 eyePos);
-	void SetEye(XMVECTOR eye);
-	void SetAt(XMVECTOR at);
+	void SetAt(XMFLOAT3 at);
 	void SetUp(XMVECTOR up);
 	void SetViewMatrix(XMFLOAT4X4 view);
 	void SetProjectionMatrix(XMFLOAT4X4 projection);
-	XMVECTOR GetEye(), GetAt(), GetUp();
-	XMFLOAT3 GetWorldPosition();
-	float GetEyePosX(), GetEyePosY(), GetEyePosZ();
-	XMFLOAT4X4 GetViewMatrix();
-	XMFLOAT4X4 GetProjectionMatrix();
+
+	XMVECTOR GetEye() const, GetUp() const;
+	XMFLOAT3 GetAt() const;
+	XMFLOAT3 GetWorldPosition() const;
+	XMFLOAT4X4 GetViewMatrix() const;
+	XMFLOAT4X4 GetProjectionMatrix() const;
 };

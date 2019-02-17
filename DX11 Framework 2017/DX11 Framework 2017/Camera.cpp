@@ -1,12 +1,8 @@
 #include "Camera.h"
+#include <ios>
 
-Camera::Camera(UINT windowHeight, UINT windowWidth)
+Camera::Camera(UINT windowHeight, UINT windowWidth) : _WindowHeight(windowHeight), _WindowWidth(windowWidth)
 {
-	_WindowHeight = windowHeight;
-	_WindowWidth = windowWidth;
-
-	atPos = XMFLOAT3(0.0f, 0.0f, 1.0f);
-	
 	frameTimer = 0.0f;
 
 	rotationX = 0.05f;
@@ -15,12 +11,16 @@ Camera::Camera(UINT windowHeight, UINT windowWidth)
 	
 	forwardMoveSpeed = 0.0f;
 	backwardMoveSpeed = 0.0f;
-	leftTurnSpeed = 0.0f;
-	rightTurnSpeed = 0.0f;
+	leftTurnSpeed = 1000.f;
+	rightTurnSpeed = 1000.0f;
 	ascendingSpeed = 0.0f;
 	descendingSpeed = 0.0f;
 	lookUpSpeed = 0.0f;
 	lookDownSpeed = 0.0f;
+
+	atPos = XMFLOAT3(worldPosition.x + sinf(rotationY), -5.0f, worldPosition.z + cosf(rotationY));
+
+	CameraMovement();
 }
 
 void Camera::CameraMovement()
@@ -40,9 +40,7 @@ void Camera::CameraMovement()
 
 void Camera::ForwardMovement()
 {
-	float rads; // Radians
-
-	if (GetAsyncKeyState(VK_UP))
+	if (!GetAsyncKeyState(VK_SHIFT) && GetAsyncKeyState(VK_UP))
 	{
 		forwardMoveSpeed += frameTimer * 0.001f;
 		if (forwardMoveSpeed > frameTimer * 0.03f)
@@ -60,16 +58,13 @@ void Camera::ForwardMovement()
 		}
 	}
 
-	rads = XMConvertToRadians(0.25f);
-
-	posW.x += sinf(rads) * forwardMoveSpeed;
-	posW.z += cosf(rads) * forwardMoveSpeed;
+	worldPosition.x -= forwardMoveSpeed;
+	worldPosition.z -= forwardMoveSpeed;
 }
 
 void Camera::BackwardMovement()
-{
-	float rads; // Radians
-	if (GetAsyncKeyState(VK_DOWN))
+{	
+	if (!GetAsyncKeyState(VK_SHIFT) && GetAsyncKeyState(VK_DOWN))
 	{
 		backwardMoveSpeed += frameTimer * 0.001f;
 		if (backwardMoveSpeed > frameTimer * 0.03f)
@@ -87,18 +82,13 @@ void Camera::BackwardMovement()
 		}
 	}
 
-	rads = XMConvertToRadians(0.2f);
-
-	//posW.x -= sinf(rads) * forwardMoveSpeed;
-	//posW.z -= cosf(rads) * forwardMoveSpeed;
-
-	posW.x -= sinf(rads) * backwardMoveSpeed;
-	posW.z -= cosf(rads) * backwardMoveSpeed;
+	worldPosition.x += backwardMoveSpeed;
+	worldPosition.z += backwardMoveSpeed;
 }
 
 void Camera::Ascension()
 {
-	if (GetAsyncKeyState(VK_SHIFT))
+	if (GetAsyncKeyState(VK_SHIFT) && GetAsyncKeyState(VK_UP))
 	{
 		ascendingSpeed += frameTimer * 0.003f;
 		if (ascendingSpeed > (frameTimer * 0.3f))
@@ -115,12 +105,12 @@ void Camera::Ascension()
 		}
 	}
 
-	posW.y += 0.5f * ascendingSpeed;
+	worldPosition.y += 0.5f * ascendingSpeed;
 }
 
 void Camera::Descension()
 {
-	if (GetAsyncKeyState('L') & 0x8000)
+	if (GetAsyncKeyState(VK_SHIFT) && GetAsyncKeyState(VK_DOWN))
 	{
 		descendingSpeed += frameTimer * 0.003f;
 		if (descendingSpeed > (frameTimer * 0.3f))
@@ -137,75 +127,32 @@ void Camera::Descension()
 		}
 	}
 
-	posW.y -= 0.25f * descendingSpeed;
+	worldPosition.y -= 0.25f * descendingSpeed;
 }
 
 void Camera::LeftTurn()
 {
-	if (GetAsyncKeyState('A') & 0x8000)
+	if (GetAsyncKeyState(VK_LEFT))
 	{
-		leftTurnSpeed += frameTimer * 0.01f;
+		atPos.x = worldPosition.x + sinf(rotationY) * leftTurnSpeed;
+		atPos.z = worldPosition.z + cosf(rotationY) * leftTurnSpeed;
 
-		if (leftTurnSpeed > (frameTimer * 0.15f))
-		{
-			leftTurnSpeed = frameTimer * 0.15f;
-		}
+		// Updates Rotation
+		rotationY -= 0.05f;
 	}
-	else
-	{
-		leftTurnSpeed -= frameTimer * 0.005f;
-
-		if (leftTurnSpeed < 0.0f)
-		{
-			leftTurnSpeed = 0.0f;
-		}
-	}
-
-	// Updates Rotation
-	rotationY -= leftTurnSpeed;
-
-	// Rotates betweeen 0 & 360 degrees
-	if (rotationY < 0.0f)
-	{
-		rotationY += 360.0f;
-	}
-
-	//atPos.x -= sinf(XMConvertToRadians(rotationY)) * leftTurnSpeed;
-	//atPos.z -= cosf(XMConvertToRadians(rotationY)) * leftTurnSpeed;
 }
 
 void Camera::RightTurn()
 {
-	if (GetAsyncKeyState('D') & 0x8000)
-	{
-		rightTurnSpeed += frameTimer * 0.01f;
+	if (GetAsyncKeyState(VK_RIGHT))
+	{ 
+		atPos.x = sinf(rotationY) * rightTurnSpeed; 
+		atPos.z = cosf(rotationY) * rightTurnSpeed;
 
-		if (rightTurnSpeed > (frameTimer * 0.15f))
-		{
-			rightTurnSpeed = frameTimer * 0.15f;
-		}
-	}
-	else
-	{
-		rightTurnSpeed -= frameTimer * 0.005f;
-
-		if (rightTurnSpeed < 0.0f)
-		{
-			rightTurnSpeed = 0.0f;
-		}
+		// Updates Rotation
+		rotationY += 0.05f;
 	}
 
-	// Updates Rotation
-	rotationY += rightTurnSpeed;
-
-	// Rotates between 0 & 360 degrees
-	if (rotationY > 360.0f)
-	{
-		rotationY -= 360.0f;
-	}
-	return;
-	//atPos.x += sinf(XMConvertToRadians(rotationY)) * rightTurnSpeed;
-	//atPos.z += cosf(XMConvertToRadians(rotationY)) * rightTurnSpeed;
 }
 
 void Camera::UpwardTurn()
@@ -236,10 +183,8 @@ void Camera::UpwardTurn()
 		rotationX = 90.0f;
 	}
 
-		atPos.y += sinf(XMConvertToRadians(rotationX)) * lookUpSpeed;
-		atPos.z += cosf(XMConvertToRadians(rotationX)) * lookUpSpeed;
-	
-
+	atPos.y += sinf(XMConvertToRadians(0.75f)) * lookUpSpeed;
+	atPos.z += cosf(XMConvertToRadians(0.75f)) * lookUpSpeed;
 }
 
 void Camera::DownwardTurn()
@@ -270,121 +215,99 @@ void Camera::DownwardTurn()
 		rotationX = -90.0f;
 	}
 
-		atPos.y -= sinf(XMConvertToRadians(rotationX)) * lookDownSpeed;
-		atPos.z -= cosf(XMConvertToRadians(rotationX)) * lookDownSpeed;
-	
+	atPos.y -= sinf(XMConvertToRadians(0.75f)) * lookDownSpeed;
+	atPos.z -= cosf(XMConvertToRadians(0.75f)) * lookDownSpeed;
 }
 
 void Camera::CreateCamera()
 {
-	XMVECTOR rotationQ = XMVectorSet(XMConvertToRadians(rotationX), XMConvertToRadians(rotationY), XMConvertToRadians(rotationZ), 1.0F);
+	const XMVECTOR rotationQ = XMVectorSet(XMConvertToRadians(rotationX), XMConvertToRadians(rotationY), XMConvertToRadians(rotationZ), 1.0f);
 	XMFLOAT4X4 _rotations;
-	XMMATRIX rotationMatrix;
-	float pitch, yaw, roll;
 
 	// Initialize the view matrix
-	Eye = XMVectorSet(posW.x, posW.y, posW.z, 1.0f);
-	At = XMVectorSet(atPos.x, atPos.y, atPos.z, 1.0f);
-	Up = XMVectorSet(0.0f, 1.0f, 0.0f, 1.0f);
+	eye = XMVectorSet(worldPosition.x, worldPosition.y, worldPosition.z, 1.0f);
+	at = XMVectorSet(atPos.x, atPos.y, atPos.z, 1.0f);
+	up = XMVectorSet(0.0f, 1.0f, 0.0f, 1.0f);
 
-	pitch = XMConvertToRadians(rotationX);
-	yaw = XMConvertToRadians(rotationY);
-	roll = XMConvertToRadians(rotationZ);
+	const float pitch = XMConvertToRadians(rotationX);
+	const float yaw = XMConvertToRadians(rotationY);
+	const float roll = XMConvertToRadians(rotationZ);
 
-	XMVector3Rotate(At, rotationQ);
+	XMVector3Rotate(at, rotationQ);
 
 	XMMatrixRotationRollPitchYaw(pitch, yaw, roll);
 	XMStoreFloat4x4(&_rotations, XMMatrixRotationX(rotationX) * XMMatrixRotationY(rotationY) * XMMatrixRotationZ(rotationZ));
-	rotationMatrix = XMLoadFloat4x4(&_rotations);
-	XMVector4Transform(At, rotationMatrix);
-	XMVector4Transform(Up, rotationMatrix);
 
-	XMStoreFloat4x4(&_view, XMMatrixLookAtLH(Eye, At, Up));
+	const XMMATRIX rotationMatrix = XMLoadFloat4x4(&_rotations);
+
+	XMVector4Transform(at, rotationMatrix);
+	XMVector4Transform(up, rotationMatrix);
+
+	XMStoreFloat4x4(&view, XMMatrixLookAtLH(eye, at, up));
 
 	// Initialize the projection matrix
-	XMStoreFloat4x4(&_projection, XMMatrixPerspectiveFovLH(XM_PIDIV2, _WindowWidth / (FLOAT)_WindowHeight, 0.01f, 100.0f));
+	XMStoreFloat4x4(&projection, XMMatrixPerspectiveFovLH(XM_PIDIV2, _WindowWidth / FLOAT(_WindowHeight), 0.01f, 100.0f));
 }
 
 void Camera::UpdateFrameTimer(float time)
 {
 	frameTimer = time;
-	return;
 }
 
 void Camera::SetUp(XMVECTOR up)
 {
-	Up = up;
+	up = up;
 }
 
 void Camera::SetWorldPosition(XMFLOAT3 eyePos)
 {
-	posW = eyePos;
+	worldPosition = eyePos;
 }
 
-void Camera::SetAt(XMVECTOR at)
+void Camera::SetAt(XMFLOAT3 at)
 {
-	At = at;
+	atPos = at;
 }
 
 void Camera::SetViewMatrix(XMFLOAT4X4 view)
 {
-	_view = view;
+	view = view;
 }
 
 void Camera::SetProjectionMatrix(XMFLOAT4X4 projection)
 {
-	_projection = projection;
+	projection = projection;
 }
 
-void Camera::SetEye(XMVECTOR eye)
+XMFLOAT3 Camera::GetWorldPosition() const
 {
-	Eye = eye;
+	return worldPosition;
 }
 
-XMFLOAT3 Camera::GetWorldPosition()
+XMFLOAT4X4 Camera::GetViewMatrix() const
 {
-	return posW;
+	return view;
 }
 
-float Camera::GetEyePosX()
+XMFLOAT4X4 Camera::GetProjectionMatrix() const
 {
-	return posW.x;
-}
-
-float Camera::GetEyePosY()
-{
-	return posW.y;
-}
-
-float Camera::GetEyePosZ()
-{
-	return posW.z;
-}
-
-XMFLOAT4X4 Camera::GetViewMatrix()
-{
-	return _view;
-}
-
-XMFLOAT4X4 Camera::GetProjectionMatrix()
-{
-	return _projection;
+	return projection;
 }
 
 
-XMVECTOR Camera::GetEye()
+XMVECTOR Camera::GetEye() const
 {
-	return Eye;
+	return eye;
 }
 
-XMVECTOR Camera::GetUp()
+XMVECTOR Camera::GetUp() const
 {
-	return Up;
+	return up;
 }
 
-XMVECTOR Camera::GetAt()
+XMFLOAT3 Camera::GetAt() const
 {
-	return At;
+	return atPos;
 }
 
 void Camera::Release()

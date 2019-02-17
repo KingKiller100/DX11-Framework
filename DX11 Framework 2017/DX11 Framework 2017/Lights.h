@@ -3,11 +3,11 @@
 
 using namespace DirectX;
 
-class Lights
+class Lights final
 {
 public:
 	Lights();
-	~Lights();
+	~Lights() = default;
 
 	//Light Vector + padding
 	XMFLOAT3 lightVecW;

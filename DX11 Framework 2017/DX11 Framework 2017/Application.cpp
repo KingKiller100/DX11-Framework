@@ -1,10 +1,6 @@
 #include "Application.h"
-// TO DO LIST
-// 1) Draw a thousand cubes
-// 2) Start implementing an object loader
-// 3) Do tutorials
 
-LRESULT CALLBACK WndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam)
+HRESULT CALLBACK WndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam)
 {
     PAINTSTRUCT ps;
     HDC hdc;
@@ -59,32 +55,41 @@ Application::~Application()
 
 HRESULT Application::Initialise(HINSTANCE hInstance, int nCmdShow)
 {
-	objectScale = 0.5f; // Planet object size
+	carPosition = XMFLOAT3(0.0f, -4.0f, 5.0f); // Planet object size
 
-    if (FAILED(InitWindow(hInstance, nCmdShow)))
+	if (FAILED(InitWindow(hInstance, nCmdShow)))
 	{
-        return E_FAIL;
+		return E_FAIL;
 	}
 
-    RECT rc;
-    GetClientRect(_hWnd, &rc);
+	RECT rc;
+	GetClientRect(_hWnd, &rc);
 	_windowWidth = rc.right - rc.left;
 	_windowHeight = rc.bottom - rc.top;
 
-    
-	if (FAILED(InitDevice()))
-    {
-        Cleanup();
 
-        return E_FAIL;
-    }
+	if (FAILED(InitDevice()))
+	{
+		Cleanup();
+
+		return E_FAIL;
+	}
 
 	// Initialize the world matrix
-	XMStoreFloat4x4(&_world, XMMatrixIdentity());
-	XMStoreFloat4x4(&_worldX, XMMatrixIdentity());
-	XMStoreFloat4x4(&_world2, XMMatrixIdentity());
-	XMStoreFloat4x4(&_pitch, XMMatrixIdentity());
-	
+	XMStoreFloat4x4(&_redCarWorld, XMMatrixIdentity());
+	XMStoreFloat4x4(&_blueCarWorld, XMMatrixIdentity());
+	XMStoreFloat4x4(&_footballWorld, XMMatrixIdentity());
+	XMStoreFloat4x4(&_skyBoxWorld, XMMatrixIdentity());
+	XMStoreFloat4x4(&_pitchWorld, XMMatrixIdentity());
+	XMStoreFloat4x4(&_goalWorld, XMMatrixIdentity());
+	XMStoreFloat4x4(&_goalWorld2, XMMatrixIdentity());
+	XMStoreFloat4x4(&_crowdWorld, XMMatrixIdentity());
+	XMStoreFloat4x4(&_crowdWorld2, XMMatrixIdentity());
+	XMStoreFloat4x4(&_crowdWorld3, XMMatrixIdentity());
+	XMStoreFloat4x4(&_crowdWorld4, XMMatrixIdentity());
+	XMStoreFloat4x4(&_crowdWorld5, XMMatrixIdentity());
+	XMStoreFloat4x4(&_crowdWorld6, XMMatrixIdentity());
+
 	//Initialise Lighting
 	_lights = new Lights();
 
@@ -93,18 +98,34 @@ HRESULT Application::Initialise(HINSTANCE hInstance, int nCmdShow)
 	{
 		_camera[i] = new Camera(_windowHeight, _windowWidth);
 
-		if (i < 2)
+		switch (i)
 		{
-			_camera[i]->SetWorldPosition(XMFLOAT3(rand() % 10, rand() % 10, -(rand() % 10) + 1));
-		}
-		else
-		{
-			_camera[i]->SetWorldPosition(XMFLOAT3(2.0f, 4.0f, -0.05f));
+		case 0: _camera[i]->SetWorldPosition(XMFLOAT3(rand() % 10, rand() % 10, -(rand() % 10) + 1));
+			break;
+		case 1:_camera[i]->SetWorldPosition(XMFLOAT3(10.0f, 10.0f, -30.0f));
+			break;
+		case 2:
+			_camera[i]->SetWorldPosition(XMFLOAT3(0.0f, 25.0f, -0.05f));
+			break;
+		case 3: 
+			_camera[i]->SetWorldPosition(XMFLOAT3(-6.0f, 0.0f, 5.0f));
+			_camera[i]->SetAt(XMFLOAT3(_currentCarPos.x, _currentCarPos.y, _currentCarPos.z));
+			break;
+		default:
+			break;
+
 		}
 
-		_camera[i]->CreateCamera();
+		_camera[i]->CameraMovement();
+
 	}
+		CreateSamplerState();
 
+		return S_OK;
+}
+
+void Application::CreateSamplerState()
+{
 	// Create the sample state
 	D3D11_SAMPLER_DESC sampDesc;
 	ZeroMemory(&sampDesc, sizeof(sampDesc));
@@ -117,9 +138,6 @@ HRESULT Application::Initialise(HINSTANCE hInstance, int nCmdShow)
 	sampDesc.MaxLOD = D3D11_FLOAT32_MAX;
 
 	_pd3dDevice->CreateSamplerState(&sampDesc, &_pSamplerLinear);
-
-	return S_OK;
-
 }
 
 HRESULT Application::InitShadersAndInputLayout()
@@ -186,129 +204,6 @@ HRESULT Application::InitShadersAndInputLayout()
     _pImmediateContext->IASetInputLayout(_pVertexLayout);
 
 	return hr;
-}
-
-
-HRESULT Application::InitCubeVertexBuffer()
-{
-	HRESULT hr;
-
-    // Create vertex buffer
-    SimpleVertex vertices[] =
-    {
-		// Front face
-        { XMFLOAT3( -1.0f, -1.0f, -1.0f ), XMFLOAT3( -1.0f, -1.0f, -1.0f ), XMFLOAT2(0.0f, 1.0f)},
-        { XMFLOAT3( -1.0f, 1.0f, -1.0f ), XMFLOAT3( -1.0f, 1.0f, -1.0f ), XMFLOAT2(0.0f, 0.0f) },
-        { XMFLOAT3( 1.0f, 1.0f, -1.0f ), XMFLOAT3( 1.0f, 1.0f, -1.0f ), XMFLOAT2(1.0f, 0.0f) },
-        { XMFLOAT3( 1.0f, -1.0f, -1.0f ), XMFLOAT3( 1.0f, -1.0f, -1.0f ), XMFLOAT2(1.0f, 1.0f) },
-
-		// Back face
-		{ XMFLOAT3(-1.0f, -1.0f, 1.0f), XMFLOAT3(-1.0f, -1.0f, 1.0f), XMFLOAT2(0.0f, 1.0f) },
-		{ XMFLOAT3(-1.0f, 1.0f, 1.0f), XMFLOAT3(-1.0f, 1.0f, 1.0f), XMFLOAT2(0.0f, 0.0f) },
-		{ XMFLOAT3(1.0f, 1.0f, 1.0f), XMFLOAT3(1.0f, 1.0f, 1.0f), XMFLOAT2(1.0f, 0.0f) },
-		{ XMFLOAT3(1.0f, -1.0f, 1.0f), XMFLOAT3(1.0f, -1.0f, 1.0f), XMFLOAT2(1.0f, 1.0f) },
-		
-		// Left side
-		{ XMFLOAT3(-1.0f, -1.0f, 1.0f), XMFLOAT3(-1.0f, -1.0f, 1.0f), XMFLOAT2(0.0f, 1.0f) },
-		{ XMFLOAT3(-1.0f, 1.0f, 1.0f), XMFLOAT3(-1.0f, 1.0f, 1.0f), XMFLOAT2(0.0f, 0.0f) },
-		{ XMFLOAT3(-1.0f, 1.0f, -1.0f), XMFLOAT3(-1.0f, 1.0f, -1.0f), XMFLOAT2(1.0f, 0.0f) },
-		{ XMFLOAT3(-1.0f, -1.0f, -1.0f), XMFLOAT3(-1.0f, -1.0f, -1.0f), XMFLOAT2(1.0f, 1.0f) },
-
-		// Right side
-		{ XMFLOAT3(1.0f, -1.0f, -1.0f), XMFLOAT3(1.0f, -1.0f, -1.0f), XMFLOAT2(0.0f, 1.0f) },
-		{ XMFLOAT3(1.0f, 1.0f, -1.0f), XMFLOAT3(1.0f, 1.0f, -1.0f), XMFLOAT2(0.0f, 0.0f) },
-		{ XMFLOAT3(1.0f, 1.0f, 1.0f), XMFLOAT3(1.0f, 1.0f, 1.0f), XMFLOAT2(1.0f, 0.0f) },
-		{ XMFLOAT3(1.0f, -1.0f, 1.0f), XMFLOAT3(1.0f, -1.0f, 1.0f), XMFLOAT2(1.0f, 1.0f) },
-
-		// Top side
-		{ XMFLOAT3(-1.0f, 1.0f, -1.0f), XMFLOAT3(-1.0f, 1.0f, -1.0f), XMFLOAT2(0.0f, 1.0f) },
-		{ XMFLOAT3(-1.0f, 1.0f, 1.0f), XMFLOAT3(-1.0f, 1.0f, 1.0f), XMFLOAT2(0.0f, 0.0f) },
-		{ XMFLOAT3(1.0f, 1.0f, 1.0f), XMFLOAT3(1.0f, 1.0f, 1.0f), XMFLOAT2(1.0f, 0.0f) },
-		{ XMFLOAT3(1.0f, 1.0f, -1.0f), XMFLOAT3(1.0f, 1.0f, -1.0f), XMFLOAT2(1.0f, 1.0f) },
-
-		// Bottom side
-		{ XMFLOAT3(-1.0f, -1.0f, -1.0f), XMFLOAT3(-1.0f, -1.0f, -1.0f), XMFLOAT2(0.0f, 1.0f) },
-		{ XMFLOAT3(-1.0f, -1.0f, 1.0f), XMFLOAT3(-1.0f, -1.0f, 1.0f), XMFLOAT2(0.0f, 0.0f) },
-		{ XMFLOAT3(1.0f, -1.0f, 1.0f), XMFLOAT3(1.0f, -1.0f, 1.0f), XMFLOAT2(1.0f, 0.0f) },
-		{ XMFLOAT3(1.0f, -1.0f, -1.0f), XMFLOAT3(1.0f, -1.0f, -1.0f), XMFLOAT2(1.0f, 1.0f) },
-		
-    };
-
-    D3D11_BUFFER_DESC bd;
-	ZeroMemory(&bd, sizeof(bd));
-    bd.Usage = D3D11_USAGE_DEFAULT;
-	bd.ByteWidth = sizeof(SimpleVertex) * 24; //'*x' due to the amount of simple vertices
-    bd.BindFlags = D3D11_BIND_VERTEX_BUFFER;
-	bd.CPUAccessFlags = 0;
-
-    D3D11_SUBRESOURCE_DATA InitData;
-	ZeroMemory(&InitData, sizeof(InitData));
-    InitData.pSysMem = vertices;
-
-    hr = _pd3dDevice->CreateBuffer(&bd, &InitData, &_pCubeVertexBuffer);
-
-    if (FAILED(hr))
-        return hr;
-
-	return S_OK;
-}
-
-HRESULT Application::InitCubeIndexBuffer()
-{
-	HRESULT hr;
-
-	// Create index buffer
-	WORD indices[] =
-	{
-		// Front
-		0,1,2,
-		0,2,3,
-		// Back
-		4,6,5,
-		4,7,6,
-		// Left
-		8,9,10,
-		8,10,11,
-		// Right
-		12,13,14,
-		12,14,15,
-		// Top
-		16,17,18,
-		16,18,19,
-		// Bottom
-		20,21,22,
-		20,22,23,
-		/*2,1,3,
-		4,0,6,
-		6,0,2,
-		7,5,6,
-		6,5,4,
-		3,1,7,
-		7,1,5,
-		4,5,0,
-		0,5,1,
-		3,7,2,
-		2,7,6,*/
-	};
-
-
-	D3D11_BUFFER_DESC bd;
-	ZeroMemory(&bd, sizeof(bd));
-
-    bd.Usage = D3D11_USAGE_DEFAULT;
-    bd.ByteWidth = sizeof(WORD) * 36;     
-    bd.BindFlags = D3D11_BIND_INDEX_BUFFER;
-	bd.CPUAccessFlags = 0;
-
-	D3D11_SUBRESOURCE_DATA InitData;
-	ZeroMemory(&InitData, sizeof(InitData));
-    InitData.pSysMem = indices;
-    hr = _pd3dDevice->CreateBuffer(&bd, &InitData, &_pCubeIndexBuffer);
-
-    if (FAILED(hr))
-        return hr;
-
-	return S_OK;
 }
 
 HRESULT Application::InitWindow(HINSTANCE hInstance, int nCmdShow)
@@ -484,20 +379,34 @@ HRESULT Application::InitDevice()
     //UINT offset = 0;
 	//_pImmediateContext->IASetVertexBuffers(0, 1, &_pCubeVertexBuffer, &stride, &offset);
 
+	_pImmediateContext2 = _pImmediateContext;
+
 	_cubeMesh = OBJLoader::Load("Models/cube.obj", _pd3dDevice, false);
-	_footballMesh = OBJLoader::Load("Models/sphere.obj", _pd3dDevice, false);
+	_car = OBJLoader::Load("Models/car.obj", _pd3dDevice, false);
+	//_footballMesh = OBJLoader::Load("Models/sphere.obj", _pd3dDevice, false);
 	_skyBox = OBJLoader::Load("Models/cube.obj", _pd3dDevice, true);
+
 	
-	CreateDDSTextureFromFile(_pd3dDevice, L"Textures/Crate_COLOR.dds", nullptr, &_pGoalTexture);
+	CreateDDSTextureFromFile(_pd3dDevice, L"Textures/Goal.dds", nullptr, &_pGoalTexture);
 	CreateDDSTextureFromFile(_pd3dDevice, L"Textures/football.dds", nullptr, &_pfootballTexture);
+	CreateDDSTextureFromFile(_pd3dDevice, L"Textures/footballPitch.dds", nullptr, &_pPitchTexture);
+	CreateDDSTextureFromFile(_pd3dDevice, L"Textures/car.dds", nullptr, &_pRedCarTexture);
+	CreateDDSTextureFromFile(_pd3dDevice, L"Textures/BlueCar.dds", nullptr, &_pBlueCarTexture);
+	CreateDDSTextureFromFile(_pd3dDevice, L"Textures/fence.dds", nullptr, &_pskyBoxTexture);
+	CreateDDSTextureFromFile(_pd3dDevice, L"Textures/crowd.dds", nullptr, &_pCrowdTexture);
+
+	_pImmediateContext2->IASetVertexBuffers(0, 1, &_car.VertexBuffer, &_car.VBStride, &_car.VBOffset);
+	_pImmediateContext2->IASetIndexBuffer(_car.IndexBuffer, DXGI_FORMAT_R16_UINT, 0);
 
     _pImmediateContext->IASetVertexBuffers(0, 1, &_skyBox.VertexBuffer, &_skyBox.VBStride, &_skyBox.VBOffset);
 	_pImmediateContext->IASetIndexBuffer(_skyBox.IndexBuffer, DXGI_FORMAT_R16_UINT, 0);
 
 	
-	_pImmediateContext->IASetVertexBuffers(8, 1, &_footballMesh.VertexBuffer, &_footballMesh.VBStride, &_footballMesh.VBOffset);
-	_pImmediateContext->IASetIndexBuffer(_footballMesh.IndexBuffer, DXGI_FORMAT_R16_UINT, 0);
+	//_pImmediateContext->IASetVertexBuffers(8, 1, &_footballMesh.VertexBuffer, &_footballMesh.VBStride, &_footballMesh.VBOffset);
+	//_pImmediateContext->IASetIndexBuffer(_footballMesh.IndexBuffer, DXGI_FORMAT_R16_UINT, 0);
 	
+
+
 	
 	//InitCubeIndexBuffer();
 
@@ -511,12 +420,19 @@ HRESULT Application::InitDevice()
 
 	CreateRasterizerState(hr);
 
+
+	// Initialise Model
+	//_goalModel = new Model(OBJLoader::Load("Models/cube.obj", _pd3dDevice, false), L"Textures/Crate_COLOR.dds", _world, _pd3dDevice, _pImmediateContext, _pSamplerLinear);
+
+//	_footballModel = new Model(OBJLoader::Load("Models/Hercules.obj", _pd3dDevice, true), L"Textures/football.dds", _worldX, _pd3dDevice, _pImmediateContext, _pSamplerLinear);
+
     if (FAILED(hr))
         return hr;
 
 	CreateBlendingEquations();
 
 	return S_OK;
+
 }
 
 void Application::CreateBlendingEquations()
@@ -593,8 +509,13 @@ void Application::Cleanup()
 	
 	// Release textures
 	if (_pfootballTexture) _pfootballTexture->Release();
+	if (_pBlueCarTexture) _pBlueCarTexture->Release();
+	if (_pRedCarTexture) _pRedCarTexture->Release();
+	if (_pskyBoxTexture) _pskyBoxTexture->Release();
+	if (_pCrowdTexture) _pCrowdTexture->Release();
 	if (_pPitchTexture) _pPitchTexture->Release();
 	if (_pGoalTexture) _pGoalTexture->Release();
+	if (_pSamplerLinear) _pSamplerLinear->Release();
 
 	//Releases COM objects
 	if (_depthStencilView) _depthStencilView->Release();
@@ -642,9 +563,24 @@ void Application::Update()
 void Application::ObjectAnimation(float t)
 {
 	// Animate the cube
-	XMStoreFloat4x4(&_world, XMMatrixRotationZ(t) * XMMatrixRotationY(t) * XMMatrixRotationX(t));
-	XMStoreFloat4x4(&_worldX, XMMatrixScaling(objectScale, objectScale, objectScale) * XMMatrixRotationX(t * 1.5) *  XMMatrixTranslation(2.0, 4.0, 0.0) * XMMatrixRotationZ(1.5 * t));
-	XMStoreFloat4x4(&_pitch, XMMatrixScaling(10.0f, 10.0f, 10.0f));
+	XMStoreFloat4x4(&_redCarWorld, XMMatrixTranslation(carPosition.x, carPosition.y, carPosition.z));
+	XMStoreFloat4x4(&_blueCarWorld, XMMatrixTranslation(-carPosition.x, carPosition.y, -carPosition.z));
+	XMStoreFloat4x4(&_pitchWorld, XMMatrixScaling(30.0f, 0.0f, 30.0f) * XMMatrixTranslation(0.0f, -5.0f, 0.0f));
+	//_goalModel->ObjectAnimation(t);
+	//_footballModel->ObjectAnimation(t);
+	XMStoreFloat4x4(&_footballWorld, XMMatrixScaling(0.5f, 0.5f, 0.5f) * XMMatrixRotationX(t * 1.5) * XMMatrixRotationZ(1.5 * t));
+	XMStoreFloat4x4(&_skyBoxWorld, XMMatrixScaling(30.0f, 30.0f, 30.0f));
+	
+	XMStoreFloat4x4(&_goalWorld, XMMatrixScaling(6.0f, 6.0f, 7.0f) * XMMatrixTranslation(0.0f, -5.0f, 30.0f));
+	XMStoreFloat4x4(&_goalWorld2, XMMatrixScaling(6.0f, 6.0f, 7.0f) * XMMatrixTranslation(0.0f, -5.0f, -30.0f));
+
+	XMStoreFloat4x4(&_crowdWorld, XMMatrixScaling(30.0f, 30.0f, 15.0f) * XMMatrixTranslation(0.0f, -5.0f, 45.0f));
+	XMStoreFloat4x4(&_crowdWorld2, XMMatrixScaling(30.0f, 30.0f, 15.0f) * XMMatrixTranslation(0.0f, -5.0f, -45.0f));
+	XMStoreFloat4x4(&_crowdWorld3, XMMatrixScaling(30.0f, 30.0f, 15.0f) * XMMatrixTranslation(-60.0f, -5.0f, 22.0f));
+	XMStoreFloat4x4(&_crowdWorld4, XMMatrixScaling(30.0f, 30.0f, 15.0f) * XMMatrixTranslation(60.0f, -5.0f, 22.0f));
+	XMStoreFloat4x4(&_crowdWorld5, XMMatrixScaling(30.0f, 30.0f, 15.0f) * XMMatrixTranslation(-60.0f, -5.0f, -22.0f));
+	XMStoreFloat4x4(&_crowdWorld6, XMMatrixScaling(30.0f, 30.0f, 15.0f) * XMMatrixTranslation(60.0f, -5.0f, -22.0f));
+
 }
 
 void Application::KeyboardFunctions()
@@ -652,10 +588,16 @@ void Application::KeyboardFunctions()
 	if (GetAsyncKeyState('R') & 0x8000)
 	{
 		_camera[2]->SetWorldPosition(XMFLOAT3(_camera[2]->GetWorldPosition().x + 0.05f, _camera[2]->GetWorldPosition().y + 0.05f, _camera[2]->GetWorldPosition().z));
-		_camera[2]->CreateCamera();
+		_camera[2]->CameraMovement();
 	}
 
-	_camera[_currentCamera]->CameraMovement();
+
+	if (_currentCamera < 2)
+	{
+
+		_camera[_currentCamera]->CameraMovement();
+	}
+
 
 	if (GetAsyncKeyState('1') & 0x8000)
 	{
@@ -672,6 +614,11 @@ void Application::KeyboardFunctions()
 		_currentCamera = 2;
 	}
 
+	if (GetAsyncKeyState('4') & 0x8000)
+	{
+		_currentCamera = 3;
+	}
+
 
 	if (GetAsyncKeyState(VK_SPACE))
 	{
@@ -683,13 +630,48 @@ void Application::KeyboardFunctions()
 	}
 
 
-	if (GetAsyncKeyState('B') & 0x8000)
+	_currentCamPos = _camera[_currentCamera]->GetAt();
+
+
+	if (GetAsyncKeyState('I') & 0x8000)
 	{
-		objectScale += 0.05f;
+		carPosition.z += 0.5f;
+		if (_currentCamera == 3)
+		{
+			_camera[_currentCamera]->SetWorldPosition(XMFLOAT3(_currentCamPos.x, _currentCamPos.y, _currentCamPos.z + 0.5f));
+			//_camera[_currentCamera]->SetAt(XMFLOAT3(_currentCarPos.x, _currentCarPos.y, _currentCarPos.z + 0.5f));
+			_camera[_currentCamera]->CameraMovement();
+		}
 	}
-	else if (GetAsyncKeyState('N') & 0x8000)
+	if (GetAsyncKeyState('K') & 0x8000)
 	{
-		objectScale -= 0.05f;
+		carPosition.z -= 0.5f;
+		if (_currentCamera == 3)
+		{
+			_camera[_currentCamera]->SetWorldPosition(XMFLOAT3(_currentCamPos.x, _currentCamPos.y, _currentCamPos.z - 0.5f));
+			//_camera[_currentCamera]->SetAt(XMFLOAT3(_currentCarPos.x, _currentCarPos.y, _currentCarPos.z - 0.5f));
+			_camera[_currentCamera]->CameraMovement();
+		}
+	}
+	if (GetAsyncKeyState('L') & 0x8000)
+	{
+		carPosition.x += 0.5f;
+		if (_currentCamera == 3)
+		{
+			_camera[_currentCamera]->SetWorldPosition(XMFLOAT3(_currentCamPos.x + 0.5f, _currentCamPos.y, _currentCamPos.z));
+			//_camera[_currentCamera]->SetAt(XMFLOAT3(_currentCarPos.x + 0.5f, _currentCarPos.y, _currentCarPos.z));
+			_camera[_currentCamera]->CameraMovement();
+		}
+	}
+	if (GetAsyncKeyState('J') & 0x8000)
+	{
+		carPosition.x -= 0.5f;
+		if (_currentCamera == 3)
+		{
+			_camera[_currentCamera]->SetWorldPosition(XMFLOAT3(_currentCamPos.x - 0.5f, _currentCamPos.y, _currentCamPos.z));
+			//_camera[_currentCamera]->SetAt(XMFLOAT3(_currentCarPos.x -= 0.5f, _currentCarPos.y, _currentCarPos.z));
+			_camera[_currentCamera]->CameraMovement();
+		}
 	}
 }
 
@@ -697,19 +679,29 @@ void Application::Draw()
 {   
 	// Clears Depth Buffer
 	_pImmediateContext->ClearDepthStencilView(_depthStencilView, D3D11_CLEAR_DEPTH | D3D11_CLEAR_STENCIL, 1.0f, 0);
-
+	_pImmediateContext2->ClearDepthStencilView(_depthStencilView, D3D11_CLEAR_DEPTH | D3D11_CLEAR_STENCIL, 1.0f, 0);
     // Clear the back buffer
     float ClearColor[4] = {0.30f, 0.20f, 0.60f, 1.0f}; // Background's RGBA values
     _pImmediateContext->ClearRenderTargetView(_pRenderTargetView, ClearColor);
 
 	// "fine-tune" the blending equation
-	float blendFactor[4] = { 0.95f, 0.95f, 0.995f, 1.0f };
+	float blendFactor[4] = { 0.99f, 0.99f, 0.99f, 1.0f };
 
 	// Sets up world space
-	XMMATRIX world = XMLoadFloat4x4(&_world);
-	XMMATRIX world2 = XMLoadFloat4x4(&_world2);
-	XMMATRIX worldX = XMLoadFloat4x4(&_worldX);
-	XMMATRIX pitch = XMLoadFloat4x4(&_pitch);
+	XMMATRIX redCarWorld = XMLoadFloat4x4(&_redCarWorld);
+	XMMATRIX blueCarWorld = XMLoadFloat4x4(&_blueCarWorld);
+	XMMATRIX skyBoxWorld = XMLoadFloat4x4(&_skyBoxWorld);
+	XMMATRIX footballWorld = XMLoadFloat4x4(&_footballWorld);
+	XMMATRIX pitch = XMLoadFloat4x4(&_pitchWorld);
+	XMMATRIX goal = XMLoadFloat4x4(&_goalWorld);
+	XMMATRIX goal2 = XMLoadFloat4x4(&_goalWorld2);
+	XMMATRIX crowd = XMLoadFloat4x4(&_crowdWorld);
+	XMMATRIX crowd2 = XMLoadFloat4x4(&_crowdWorld2);
+	XMMATRIX crowd3 = XMLoadFloat4x4(&_crowdWorld3);
+	XMMATRIX crowd4 = XMLoadFloat4x4(&_crowdWorld4);	
+	XMMATRIX crowd5 = XMLoadFloat4x4(&_crowdWorld5);
+	XMMATRIX crowd6 = XMLoadFloat4x4(&_crowdWorld6);
+
 	
 	// Sets up camera view matrices
 	XMMATRIX mainView = XMLoadFloat4x4(&_camera[_currentCamera]->GetViewMatrix());
@@ -732,33 +724,47 @@ void Application::Draw()
 	cb.specularPower = _lights->specularPower;
 
 	// Update variables
-	cb.mWorld = XMMatrixTranspose(world);
+	cb.mWorld = XMMatrixTranspose(redCarWorld);
 	cb.mView = XMMatrixTranspose(mainView);
 	cb.mProjection = XMMatrixTranspose(mainProjection);
 	// Updates camera eye world position
 	cb.eyePosW = _camera[_currentCamera]->GetWorldPosition();
+
+
 	// Sets up object textures
-	_pImmediateContext->PSSetShaderResources(0, 1, &_pfootballTexture);
-	_pImmediateContext->PSSetSamplers(0, 1, &_pSamplerLinear);
+	_pImmediateContext2->PSSetShaderResources(0, 1, &_pRedCarTexture);
+	_pImmediateContext2->PSSetSamplers(0, 1, &_pSamplerLinear);
 	// Uses constant buffers in shader
-	_pImmediateContext->UpdateSubresource(_pConstantBuffer, 0, nullptr, &cb, 0, 0);
+	_pImmediateContext2->UpdateSubresource(_pConstantBuffer, 0, nullptr, &cb, 0, 0);
 	// Set the blend state for transparent objects
-	_pImmediateContext->OMSetBlendState(0, 0, 0xffffffff);
+	_pImmediateContext2->OMSetBlendState(0, 0, 0xffffffff);
     // Sends shader data
-	_pImmediateContext->VSSetShader(_pVertexShader, nullptr, 0);
-	_pImmediateContext->VSSetConstantBuffers(0, 1, &_pConstantBuffer);
-	_pImmediateContext->PSSetConstantBuffers(0, 1, &_pConstantBuffer);
-	_pImmediateContext->PSSetShader(_pPixelShader, nullptr, 0);
+	_pImmediateContext2->VSSetShader(_pVertexShader, nullptr, 0);
+	_pImmediateContext2->VSSetConstantBuffers(0, 1, &_pConstantBuffer);
+	_pImmediateContext2->PSSetConstantBuffers(0, 1, &_pConstantBuffer);
+	_pImmediateContext2->PSSetShader(_pPixelShader, nullptr, 0);
 	// Renders sun cube 
-	_pImmediateContext->DrawIndexed(_footballMesh.IndexCount, 0, 0);
+	_pImmediateContext2->DrawIndexed(_car.IndexCount, 0, 0);
 	
 
-	// Draws Planet
-	cb.mWorld = XMMatrixTranspose(worldX);
+	cb.mWorld = XMMatrixTranspose(blueCarWorld);
 	cb.mView = XMMatrixTranspose(mainView);
 	cb.mProjection = XMMatrixTranspose(mainProjection);
 	// Sets up object textures
-	_pImmediateContext->PSSetShaderResources(0, 1, &_pGoalTexture);
+	_pImmediateContext2->PSSetShaderResources(0, 1, &_pBlueCarTexture);
+	_pImmediateContext2->PSSetSamplers(0, 1, &_pSamplerLinear);
+	_pImmediateContext2->UpdateSubresource(_pConstantBuffer, 0, nullptr, &cb, 0, 0);
+	// Set the default blend state (no blending) for opaque objects
+	_pImmediateContext2->OMSetBlendState(0, 0, 0xffffffff);
+	// Renders planet cube 
+	_pImmediateContext2->DrawIndexed(_car.IndexCount, 0, 0);
+
+	// Draws Planet
+	cb.mWorld = XMMatrixTranspose(footballWorld);
+	cb.mView = XMMatrixTranspose(mainView);
+	cb.mProjection = XMMatrixTranspose(mainProjection);
+	// Sets up object textures
+	_pImmediateContext->PSSetShaderResources(0, 1, &_pfootballTexture);
 	_pImmediateContext->PSSetSamplers(0, 1, &_pSamplerLinear);
 	_pImmediateContext->UpdateSubresource(_pConstantBuffer, 0, nullptr, &cb, 0, 0);
 	// Set the default blend state (no blending) for opaque objects
@@ -766,18 +772,149 @@ void Application::Draw()
 	// Renders planet cube 
 	_pImmediateContext->DrawIndexed(_cubeMesh.IndexCount, 0, 0);
 
+	// Draws Sky Box
+	cb.mWorld = XMMatrixTranspose(skyBoxWorld);
+	cb.mView = XMMatrixTranspose(mainView);
+	cb.mProjection = XMMatrixTranspose(mainProjection);
+	// Sets up object textures
+	_pImmediateContext->PSSetShaderResources(0, 1, &_pskyBoxTexture);
+	_pImmediateContext->PSSetSamplers(0, 1, &_pSamplerLinear);
+	_pImmediateContext->UpdateSubresource(_pConstantBuffer, 0, nullptr, &cb, 0, 0);
+	// Set the default blend state (no blending) for opaque objects
+	_pImmediateContext->OMSetBlendState(_transparency, blendFactor, 0xffffffff);
+	
+	_pImmediateContext->DrawIndexed(_cubeMesh.IndexCount, 0, 0);
 
-	// Draws extra
+
+	// Draws Pitch
 	cb.mWorld = XMMatrixTranspose(pitch);
 	cb.mView = XMMatrixTranspose(mainView);
 	cb.mProjection = XMMatrixTranspose(mainProjection);
+	// Sets up object textures
+	_pImmediateContext->PSSetShaderResources(0, 1, &_pPitchTexture);
+	_pImmediateContext->PSSetSamplers(0, 1, &_pSamplerLinear);
 	_pImmediateContext->UpdateSubresource(_pConstantBuffer, 0, nullptr, &cb, 0, 0);
 	// Set the blend state for transparent objects
-	_pImmediateContext->OMSetBlendState(_transparency, blendFactor, 0xffffffff);
-
+	_pImmediateContext->OMSetBlendState(0, 0, 0xffffffff);
 	// Renders Extra
 	_pImmediateContext->DrawIndexed(_skyBox.IndexCount, 0, 0);	
 
+	// Draws Goal
+	cb.mWorld = XMMatrixTranspose(goal);
+	cb.mView = XMMatrixTranspose(mainView);
+	cb.mProjection = XMMatrixTranspose(mainProjection);
+	// Sets up object textures
+	_pImmediateContext->PSSetShaderResources(0, 1, &_pGoalTexture);
+	_pImmediateContext->PSSetSamplers(0, 1, &_pSamplerLinear);
+	_pImmediateContext->UpdateSubresource(_pConstantBuffer, 0, nullptr, &cb, 0, 0);
+	// Set the blend state for transparent objects
+	_pImmediateContext->OMSetBlendState(0, 0, 0xffffffff);
+	// Renders Extra
+	_pImmediateContext->DrawIndexed(_skyBox.IndexCount, 0, 0);
+
+	// Draws Goal
+	cb.mWorld = XMMatrixTranspose(goal2);
+	cb.mView = XMMatrixTranspose(mainView);
+	cb.mProjection = XMMatrixTranspose(mainProjection);
+	// Sets up object textures
+	_pImmediateContext->PSSetShaderResources(0, 1, &_pGoalTexture);
+	_pImmediateContext->PSSetSamplers(0, 1, &_pSamplerLinear);
+	_pImmediateContext->UpdateSubresource(_pConstantBuffer, 0, nullptr, &cb, 0, 0);
+	// Set the blend state for transparent objects
+	_pImmediateContext->OMSetBlendState(0, 0, 0xffffffff);
+	// Renders Extra
+	_pImmediateContext->DrawIndexed(_skyBox.IndexCount, 0, 0);
+
+	// Draws crowd
+	cb.mWorld = XMMatrixTranspose(crowd);
+	cb.mView = XMMatrixTranspose(mainView);
+	cb.mProjection = XMMatrixTranspose(mainProjection);
+	// Sets up object textures
+	_pImmediateContext->PSSetShaderResources(0, 1, &_pskyBoxTexture);
+	_pImmediateContext->PSSetSamplers(0, 1, &_pSamplerLinear);
+	_pImmediateContext->UpdateSubresource(_pConstantBuffer, 0, nullptr, &cb, 0, 0);
+	// Set the default blend state (no blending) for opaque objects
+	_pImmediateContext->OMSetBlendState(_transparency, blendFactor, 0xffffffff);
+
+	
+	_pImmediateContext->DrawIndexed(_cubeMesh.IndexCount, 0, 0);
+
+
+	// Draws crowd
+	cb.mWorld = XMMatrixTranspose(crowd2);
+	cb.mView = XMMatrixTranspose(mainView);
+	cb.mProjection = XMMatrixTranspose(mainProjection);
+	// Sets up object textures
+	_pImmediateContext->PSSetShaderResources(0, 1, &_pskyBoxTexture);
+	_pImmediateContext->PSSetSamplers(0, 1, &_pSamplerLinear);
+	_pImmediateContext->UpdateSubresource(_pConstantBuffer, 0, nullptr, &cb, 0, 0);
+	// Set the default blend state (no blending) for opaque objects
+	_pImmediateContext->OMSetBlendState(_transparency, blendFactor, 0xffffffff);
+
+
+	_pImmediateContext->DrawIndexed(_cubeMesh.IndexCount, 0, 0);
+	
+
+	// Draws crowd
+	cb.mWorld = XMMatrixTranspose(crowd3);
+	cb.mView = XMMatrixTranspose(mainView);
+	cb.mProjection = XMMatrixTranspose(mainProjection);
+	// Sets up object textures
+	_pImmediateContext->PSSetShaderResources(0, 1, &_pskyBoxTexture);
+	_pImmediateContext->PSSetSamplers(0, 1, &_pSamplerLinear);
+	_pImmediateContext->UpdateSubresource(_pConstantBuffer, 0, nullptr, &cb, 0, 0);
+	// Set the default blend state (no blending) for opaque objects
+	_pImmediateContext->OMSetBlendState(_transparency, blendFactor, 0xffffffff);
+
+
+	_pImmediateContext->DrawIndexed(_cubeMesh.IndexCount, 0, 0);
+
+	// Draws crowd
+	cb.mWorld = XMMatrixTranspose(crowd4);
+	cb.mView = XMMatrixTranspose(mainView);
+	cb.mProjection = XMMatrixTranspose(mainProjection);
+	// Sets up object textures
+	_pImmediateContext->PSSetShaderResources(0, 1, &_pskyBoxTexture);
+	_pImmediateContext->PSSetSamplers(0, 1, &_pSamplerLinear);
+	_pImmediateContext->UpdateSubresource(_pConstantBuffer, 0, nullptr, &cb, 0, 0);
+	// Set the default blend state (no blending) for opaque objects
+	_pImmediateContext->OMSetBlendState(_transparency, blendFactor, 0xffffffff);
+
+
+	_pImmediateContext->DrawIndexed(_cubeMesh.IndexCount, 0, 0);
+
+
+	// Draws crowd
+	cb.mWorld = XMMatrixTranspose(crowd5);
+	cb.mView = XMMatrixTranspose(mainView);
+	cb.mProjection = XMMatrixTranspose(mainProjection);
+	// Sets up object textures
+	_pImmediateContext->PSSetShaderResources(0, 1, &_pskyBoxTexture);
+	_pImmediateContext->PSSetSamplers(0, 1, &_pSamplerLinear);
+	_pImmediateContext->UpdateSubresource(_pConstantBuffer, 0, nullptr, &cb, 0, 0);
+	// Set the default blend state (no blending) for opaque objects
+	_pImmediateContext->OMSetBlendState(_transparency, blendFactor, 0xffffffff);
+
+
+	_pImmediateContext->DrawIndexed(_cubeMesh.IndexCount, 0, 0);
+
+
+	// Draws crowd
+	cb.mWorld = XMMatrixTranspose(crowd6);
+	cb.mView = XMMatrixTranspose(mainView);
+	cb.mProjection = XMMatrixTranspose(mainProjection);
+	// Sets up object textures
+	_pImmediateContext->PSSetShaderResources(0, 1, &_pskyBoxTexture);
+	_pImmediateContext->PSSetSamplers(0, 1, &_pSamplerLinear);
+	_pImmediateContext->UpdateSubresource(_pConstantBuffer, 0, nullptr, &cb, 0, 0);
+	// Set the default blend state (no blending) for opaque objects
+	_pImmediateContext->OMSetBlendState(_transparency, blendFactor, 0xffffffff);
+
+
+	_pImmediateContext->DrawIndexed(_cubeMesh.IndexCount, 0, 0);
+	//_goalModel->DrawModel(_pVertexShader, _pPixelShader, _pConstantBuffer, _camera, _currentCamera, _transparency, false);
+
+	//_footballModel->DrawModel(_pVertexShader, _pPixelShader, _pConstantBuffer, _camera, _currentCamera, _transparency, true);
 
 	// Present our back buffer to our front buffer
     _pSwapChain->Present(1, 0);
