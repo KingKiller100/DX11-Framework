@@ -116,7 +116,7 @@ HRESULT Application::Initialise(HINSTANCE hInstance, int nCmdShow)
 
 		}
 
-		_camera[i]->CameraMovement();
+		_camera[i]->Movement();
 
 	}
 		CreateSamplerState();
@@ -527,36 +527,38 @@ void Application::Cleanup()
 	//Release alpha blender
 	if (_transparency) _transparency->Release();
 
-	for (int i = 0; i < noOfCameras; i++)
+	for (auto& camera : _camera)
 	{
-		if (_camera[i]) _camera[i] = nullptr;
+		if (camera)
+		{
+			delete camera;
+			camera = nullptr;
+		}
 	}
 }
 
 void Application::Update()
 {
     // Update our time
-    static float t = 0.0f;
+    static float t = 1.f/60.f;
 
-    if (_driverType == D3D_DRIVER_TYPE_REFERENCE)
-    {
-        t += (float) XM_PI * 0.0125f;
-    }
-    else
-    {
-        static DWORD dwTimeStart = 0;
-        DWORD dwTimeCur = GetTickCount();
+    // if (_driverType == D3D_DRIVER_TYPE_REFERENCE)
+    // {
+    //     t += (float) XM_PI * 0.0125f;
+    // }
+    // else
+    // {
+    //     static DWORD dwTimeStart = 0;
+    //     DWORD dwTimeCur = GetTickCount();
+    //
+    //     if (dwTimeStart == 0)
+    //         dwTimeStart = dwTimeCur;
+    //
+    //     t = (dwTimeCur - dwTimeStart) / 1000.0f;
+    // }
+	_camera[_currentCamera]->Update();
 
-        if (dwTimeStart == 0)
-            dwTimeStart = dwTimeCur;
-
-        t = (dwTimeCur - dwTimeStart) / 1000.0f;
-    }
-
-	_camera[_currentCamera]->UpdateFrameTimer(t);
-
-	ObjectAnimation(t);
-	
+	ObjectAnimation(t);	
 	KeyboardFunctions();
 }
 
@@ -580,7 +582,6 @@ void Application::ObjectAnimation(float t)
 	XMStoreFloat4x4(&_crowdWorld4, XMMatrixScaling(30.0f, 30.0f, 15.0f) * XMMatrixTranslation(60.0f, -5.0f, 22.0f));
 	XMStoreFloat4x4(&_crowdWorld5, XMMatrixScaling(30.0f, 30.0f, 15.0f) * XMMatrixTranslation(-60.0f, -5.0f, -22.0f));
 	XMStoreFloat4x4(&_crowdWorld6, XMMatrixScaling(30.0f, 30.0f, 15.0f) * XMMatrixTranslation(60.0f, -5.0f, -22.0f));
-
 }
 
 void Application::KeyboardFunctions()
@@ -588,14 +589,13 @@ void Application::KeyboardFunctions()
 	if (GetAsyncKeyState('R') & 0x8000)
 	{
 		_camera[2]->SetWorldPosition(XMFLOAT3(_camera[2]->GetWorldPosition().x + 0.05f, _camera[2]->GetWorldPosition().y + 0.05f, _camera[2]->GetWorldPosition().z));
-		_camera[2]->CameraMovement();
+		_camera[2]->Update();
 	}
 
 
 	if (_currentCamera < 2)
 	{
-
-		_camera[_currentCamera]->CameraMovement();
+		_camera[_currentCamera]->Movement();
 	}
 
 
@@ -639,8 +639,7 @@ void Application::KeyboardFunctions()
 		if (_currentCamera == 3)
 		{
 			_camera[_currentCamera]->SetWorldPosition(XMFLOAT3(_currentCamPos.x, _currentCamPos.y, _currentCamPos.z + 0.5f));
-			//_camera[_currentCamera]->SetAt(XMFLOAT3(_currentCarPos.x, _currentCarPos.y, _currentCarPos.z + 0.5f));
-			_camera[_currentCamera]->CameraMovement();
+			_camera[_currentCamera]->Movement();
 		}
 	}
 	if (GetAsyncKeyState('K') & 0x8000)
@@ -649,8 +648,7 @@ void Application::KeyboardFunctions()
 		if (_currentCamera == 3)
 		{
 			_camera[_currentCamera]->SetWorldPosition(XMFLOAT3(_currentCamPos.x, _currentCamPos.y, _currentCamPos.z - 0.5f));
-			//_camera[_currentCamera]->SetAt(XMFLOAT3(_currentCarPos.x, _currentCarPos.y, _currentCarPos.z - 0.5f));
-			_camera[_currentCamera]->CameraMovement();
+			_camera[_currentCamera]->Movement();
 		}
 	}
 	if (GetAsyncKeyState('L') & 0x8000)
@@ -659,8 +657,7 @@ void Application::KeyboardFunctions()
 		if (_currentCamera == 3)
 		{
 			_camera[_currentCamera]->SetWorldPosition(XMFLOAT3(_currentCamPos.x + 0.5f, _currentCamPos.y, _currentCamPos.z));
-			//_camera[_currentCamera]->SetAt(XMFLOAT3(_currentCarPos.x + 0.5f, _currentCarPos.y, _currentCarPos.z));
-			_camera[_currentCamera]->CameraMovement();
+			_camera[_currentCamera]->Movement();
 		}
 	}
 	if (GetAsyncKeyState('J') & 0x8000)
@@ -669,8 +666,7 @@ void Application::KeyboardFunctions()
 		if (_currentCamera == 3)
 		{
 			_camera[_currentCamera]->SetWorldPosition(XMFLOAT3(_currentCamPos.x - 0.5f, _currentCamPos.y, _currentCamPos.z));
-			//_camera[_currentCamera]->SetAt(XMFLOAT3(_currentCarPos.x -= 0.5f, _currentCarPos.y, _currentCarPos.z));
-			_camera[_currentCamera]->CameraMovement();
+			_camera[_currentCamera]->Movement();
 		}
 	}
 }

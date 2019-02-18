@@ -1,10 +1,4 @@
 ﻿  Camera.cpp
-c:\users\d012120g.student\documents\dx11-framework\dx11 framework 2017\dx11 framework 2017\camera.cpp(268): warning C4458: declaration of 'up' hides class member
-  c:\users\d012120g.student\documents\dx11-framework\dx11 framework 2017\dx11 framework 2017\camera.h(14): note: see declaration of 'Camera::up'
-c:\users\d012120g.student\documents\dx11-framework\dx11 framework 2017\dx11 framework 2017\camera.cpp(278): warning C4458: declaration of 'at' hides class member
+c:\users\d012120g.student\documents\dx11-framework\dx11 framework 2017\dx11 framework 2017\camera.cpp(199): warning C4458: declaration of 'at' hides class member
   c:\users\d012120g.student\documents\dx11-framework\dx11 framework 2017\dx11 framework 2017\camera.h(13): note: see declaration of 'Camera::at'
-c:\users\d012120g.student\documents\dx11-framework\dx11 framework 2017\dx11 framework 2017\camera.cpp(283): warning C4458: declaration of 'view' hides class member
-  c:\users\d012120g.student\documents\dx11-framework\dx11 framework 2017\dx11 framework 2017\camera.h(15): note: see declaration of 'Camera::view'
-c:\users\d012120g.student\documents\dx11-framework\dx11 framework 2017\dx11 framework 2017\camera.cpp(288): warning C4458: declaration of 'projection' hides class member
-  c:\users\d012120g.student\documents\dx11-framework\dx11 framework 2017\dx11 framework 2017\camera.h(16): note: see declaration of 'Camera::projection'
   DX11 Framework.vcxproj -> C:\Users\d012120g.STUDENT\Documents\DX11-Framework\DX11 Framework 2017\DX11 Framework 2017\Debug\DX11 Framework.exe

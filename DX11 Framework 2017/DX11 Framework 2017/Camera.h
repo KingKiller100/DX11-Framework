@@ -26,13 +26,11 @@ private:
 	float leftTurnSpeed, rightTurnSpeed;
 	float ascendingSpeed, descendingSpeed;
 	float lookUpSpeed, lookDownSpeed;
-	float frameTimer;
 
 	float rotationX, rotationY, rotationZ; 
 
 
 private:
-	void CreateCamera();
 
 	void ForwardMovement();
 	void BackwardMovement();
@@ -47,17 +45,16 @@ public:
 	Camera(UINT windowHeight, UINT windowWidth);
 	void Release();
 
-
-	void UpdateFrameTimer(float time);
 	// Camera Movement method
-	void CameraMovement();
+	void Movement();
+	void Update();
 
 	// Variables Getters & Setters 
 	void SetWorldPosition(XMFLOAT3 eyePos);
 	void SetAt(XMFLOAT3 at);
-	void SetUp(XMVECTOR up);
+	void SetUp(XMVECTOR _up);
 	void SetViewMatrix(XMFLOAT4X4 view);
-	void SetProjectionMatrix(XMFLOAT4X4 projection);
+	void SetProjectionMatrix(XMFLOAT4X4 _projection);
 
 	XMVECTOR GetEye() const, GetUp() const;
 	XMFLOAT3 GetAt() const;
