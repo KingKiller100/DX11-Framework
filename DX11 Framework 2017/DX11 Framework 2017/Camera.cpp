@@ -38,6 +38,13 @@ void Camera::CameraMovement()
 	CreateCamera();
 }
 
+XMFLOAT3 Normalize(const XMFLOAT3 & v)
+{
+	const float result = sqrtf(v.x * v.x + v.y * v.y + v.z * v.z);
+
+	return XMFLOAT3(v.x / result, v.y / result, v.z / result);
+}
+
 void Camera::ForwardMovement()
 {
 	if (!GetAsyncKeyState(VK_SHIFT) && GetAsyncKeyState(VK_UP))
@@ -47,6 +54,11 @@ void Camera::ForwardMovement()
 		{
 			forwardMoveSpeed = frameTimer * 0.03f;
 		}
+
+		const XMFLOAT3 result = Normalize(XMFLOAT3(atPos.x - worldPosition.x, atPos.y - worldPosition.y, atPos.z - worldPosition.z));
+
+		worldPosition.x += result.x * forwardMoveSpeed;
+		worldPosition.z += result.z * forwardMoveSpeed;
 	}
 	else
 	{
@@ -57,9 +69,6 @@ void Camera::ForwardMovement()
 			forwardMoveSpeed = 0.0f;
 		}
 	}
-
-	worldPosition.x -= forwardMoveSpeed;
-	worldPosition.z -= forwardMoveSpeed;
 }
 
 void Camera::BackwardMovement()
@@ -71,6 +80,11 @@ void Camera::BackwardMovement()
 		{
 			backwardMoveSpeed = frameTimer * 0.03f;
 		}
+
+		const XMFLOAT3 result = Normalize(XMFLOAT3(atPos.x - worldPosition.x, atPos.y - worldPosition.y, atPos.z - worldPosition.z));
+
+		worldPosition.x -= result.x * backwardMoveSpeed;
+		worldPosition.z -= result.z * backwardMoveSpeed;
 	}
 	else
 	{
@@ -82,8 +96,6 @@ void Camera::BackwardMovement()
 		}
 	}
 
-	worldPosition.x += backwardMoveSpeed;
-	worldPosition.z += backwardMoveSpeed;
 }
 
 void Camera::Ascension()
@@ -251,7 +263,7 @@ void Camera::CreateCamera()
 
 void Camera::UpdateFrameTimer(float time)
 {
-	frameTimer = time;
+	frameTimer += time;	
 }
 
 void Camera::SetUp(XMVECTOR up)
