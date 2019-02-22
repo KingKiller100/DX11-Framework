@@ -80,7 +80,6 @@ private:
 
 	// car position
 	XMFLOAT3 carPosition;
-	XMFLOAT3 _currentCarPos;
 	
 	// Mesh Data
 	MeshData _cubeMesh;

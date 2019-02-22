@@ -23,15 +23,11 @@ private:
 	UINT _WindowWidth;
 
 	float forwardMoveSpeed, backwardMoveSpeed;
-	float leftTurnSpeed, rightTurnSpeed;
 	float ascendingSpeed, descendingSpeed;
-	const float lookVerticalSpeed;
-
 	float rotationX, rotationY; 
-
+	float turnSpeed;
 
 private:
-
 	void ForwardMovement();
 	void BackwardMovement();
 	void Ascension();
@@ -48,11 +44,11 @@ public:
 	// Camera Movement method
 	void Movement();
 	void Update();
+	void RecalculateCamera();
 
 	// Variables Getters & Setters 
 	void SetWorldPosition(const XMFLOAT3& eyePos);
-	void SetAt(const XMFLOAT3& at);
-	void SetUp(const XMVECTOR& _up);
+	void SetAt(const XMFLOAT3& atPos);
 	void SetViewMatrix(const XMFLOAT4X4& view);
 	void SetProjectionMatrix(const XMFLOAT4X4& _projection);
 

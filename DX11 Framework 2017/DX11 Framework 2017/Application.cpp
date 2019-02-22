@@ -561,7 +561,6 @@ void Application::KeyboardFunctions()
 	if (GetAsyncKeyState('R') & 0x8000)
 	{
 		_camera->SetWorldPosition(XMFLOAT3(_camera->GetWorldPosition().x + 0.05f, _camera->GetWorldPosition().y + 0.05f, _camera->GetWorldPosition().z));
-		_camera->Update();
 	}
 	
 	if (GetAsyncKeyState(VK_SPACE))
@@ -572,10 +571,6 @@ void Application::KeyboardFunctions()
 	{
 		_pImmediateContext->RSSetState(nullptr);
 	}
-
-
-	auto _currentCamPos = _camera->GetAt();
-
 }
 
 void Application::Draw()
@@ -583,10 +578,10 @@ void Application::Draw()
 	// Clears Depth Buffer
 	_pImmediateContext->ClearDepthStencilView(_depthStencilView, D3D11_CLEAR_DEPTH | D3D11_CLEAR_STENCIL, 1.0f, 0);
 	_pImmediateContext2->ClearDepthStencilView(_depthStencilView, D3D11_CLEAR_DEPTH | D3D11_CLEAR_STENCIL, 1.0f, 0);
+
     // Clear the back buffer
     float ClearColor[4] = {0.30f, 0.20f, 0.60f, 1.0f}; // Background's RGBA values
     _pImmediateContext->ClearRenderTargetView(_pRenderTargetView, ClearColor);
-
 	// "fine-tune" the blending equation
 	float blendFactor[4] = { 0.99f, 0.99f, 0.99f, 1.0f };
 
