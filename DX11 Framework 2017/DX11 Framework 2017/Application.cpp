@@ -94,34 +94,11 @@ HRESULT Application::Initialise(HINSTANCE hInstance, int nCmdShow)
 	_lights = new Lights();
 
 	// Initialise camera
-	for (int i = 0; i < noOfCameras; i++)
-	{
-		_camera[i] = new Camera(_windowHeight, _windowWidth);
+	_camera = new Camera(XMFLOAT3(0, 5,0), _windowHeight, _windowWidth);
 
-		switch (i)
-		{
-		case 0: _camera[i]->SetWorldPosition(XMFLOAT3(rand() % 10, rand() % 10, -(rand() % 10) + 1));
-			break;
-		case 1:_camera[i]->SetWorldPosition(XMFLOAT3(10.0f, 10.0f, -30.0f));
-			break;
-		case 2:
-			_camera[i]->SetWorldPosition(XMFLOAT3(0.0f, 25.0f, -0.05f));
-			break;
-		case 3: 
-			_camera[i]->SetWorldPosition(XMFLOAT3(-6.0f, 0.0f, 5.0f));
-			_camera[i]->SetAt(XMFLOAT3(_currentCarPos.x, _currentCarPos.y, _currentCarPos.z));
-			break;
-		default:
-			break;
+	CreateSamplerState();
 
-		}
-
-		_camera[i]->Movement();
-
-	}
-		CreateSamplerState();
-
-		return S_OK;
+	return S_OK;
 }
 
 void Application::CreateSamplerState()
@@ -404,10 +381,7 @@ HRESULT Application::InitDevice()
 	
 	//_pImmediateContext->IASetVertexBuffers(8, 1, &_footballMesh.VertexBuffer, &_footballMesh.VBStride, &_footballMesh.VBOffset);
 	//_pImmediateContext->IASetIndexBuffer(_footballMesh.IndexBuffer, DXGI_FORMAT_R16_UINT, 0);
-	
-
-
-	
+			
 	//InitCubeIndexBuffer();
 
     // Set index buffer
@@ -494,19 +468,19 @@ void Application::CreateRasterizerState(HRESULT hr)
 
 void Application::Cleanup()
 {
-    if (_pImmediateContext) _pImmediateContext->ClearState();
+	if (_pImmediateContext) _pImmediateContext->ClearState();
 
-    if (_pConstantBuffer) _pConstantBuffer->Release();
-    if (_pCubeVertexBuffer) _pCubeVertexBuffer->Release();
-    if (_pCubeIndexBuffer) _pCubeIndexBuffer->Release();
-    if (_pVertexLayout) _pVertexLayout->Release();
-    if (_pVertexShader) _pVertexShader->Release();
-    if (_pPixelShader) _pPixelShader->Release();
-    if (_pRenderTargetView) _pRenderTargetView->Release();
-    if (_pSwapChain) _pSwapChain->Release();
-    if (_pImmediateContext) _pImmediateContext->Release();
-    if (_pd3dDevice) _pd3dDevice->Release();
-	
+	if (_pConstantBuffer) _pConstantBuffer->Release();
+	if (_pCubeVertexBuffer) _pCubeVertexBuffer->Release();
+	if (_pCubeIndexBuffer) _pCubeIndexBuffer->Release();
+	if (_pVertexLayout) _pVertexLayout->Release();
+	if (_pVertexShader) _pVertexShader->Release();
+	if (_pPixelShader) _pPixelShader->Release();
+	if (_pRenderTargetView) _pRenderTargetView->Release();
+	if (_pSwapChain) _pSwapChain->Release();
+	if (_pImmediateContext) _pImmediateContext->Release();
+	if (_pd3dDevice) _pd3dDevice->Release();
+
 	// Release textures
 	if (_pfootballTexture) _pfootballTexture->Release();
 	if (_pBlueCarTexture) _pBlueCarTexture->Release();
@@ -527,14 +501,12 @@ void Application::Cleanup()
 	//Release alpha blender
 	if (_transparency) _transparency->Release();
 
-	for (auto& camera : _camera)
+	if (_camera)
 	{
-		if (camera)
-		{
-			delete camera;
-			camera = nullptr;
-		}
+		delete _camera;
+		_camera = nullptr;
 	}
+
 }
 
 void Application::Update()
@@ -556,7 +528,7 @@ void Application::Update()
     //
     //     t = (dwTimeCur - dwTimeStart) / 1000.0f;
     // }
-	_camera[_currentCamera]->Update();
+	_camera->Update();
 
 	ObjectAnimation(t);	
 	KeyboardFunctions();
@@ -588,38 +560,10 @@ void Application::KeyboardFunctions()
 {
 	if (GetAsyncKeyState('R') & 0x8000)
 	{
-		_camera[2]->SetWorldPosition(XMFLOAT3(_camera[2]->GetWorldPosition().x + 0.05f, _camera[2]->GetWorldPosition().y + 0.05f, _camera[2]->GetWorldPosition().z));
-		_camera[2]->Update();
+		_camera->SetWorldPosition(XMFLOAT3(_camera->GetWorldPosition().x + 0.05f, _camera->GetWorldPosition().y + 0.05f, _camera->GetWorldPosition().z));
+		_camera->Update();
 	}
-
-
-	if (_currentCamera < 2)
-	{
-		_camera[_currentCamera]->Movement();
-	}
-
-
-	if (GetAsyncKeyState('1') & 0x8000)
-	{
-		_currentCamera = 0;
-	}
-
-	if (GetAsyncKeyState('2') & 0x8000)
-	{
-		_currentCamera = 1;
-	}
-
-	if (GetAsyncKeyState('3') & 0x8000)
-	{
-		_currentCamera = 2;
-	}
-
-	if (GetAsyncKeyState('4') & 0x8000)
-	{
-		_currentCamera = 3;
-	}
-
-
+	
 	if (GetAsyncKeyState(VK_SPACE))
 	{
 		_pImmediateContext->RSSetState(_wireFrame);
@@ -630,45 +574,8 @@ void Application::KeyboardFunctions()
 	}
 
 
-	_currentCamPos = _camera[_currentCamera]->GetAt();
+	auto _currentCamPos = _camera->GetAt();
 
-
-	if (GetAsyncKeyState('I') & 0x8000)
-	{
-		carPosition.z += 0.5f;
-		if (_currentCamera == 3)
-		{
-			_camera[_currentCamera]->SetWorldPosition(XMFLOAT3(_currentCamPos.x, _currentCamPos.y, _currentCamPos.z + 0.5f));
-			_camera[_currentCamera]->Movement();
-		}
-	}
-	if (GetAsyncKeyState('K') & 0x8000)
-	{
-		carPosition.z -= 0.5f;
-		if (_currentCamera == 3)
-		{
-			_camera[_currentCamera]->SetWorldPosition(XMFLOAT3(_currentCamPos.x, _currentCamPos.y, _currentCamPos.z - 0.5f));
-			_camera[_currentCamera]->Movement();
-		}
-	}
-	if (GetAsyncKeyState('L') & 0x8000)
-	{
-		carPosition.x += 0.5f;
-		if (_currentCamera == 3)
-		{
-			_camera[_currentCamera]->SetWorldPosition(XMFLOAT3(_currentCamPos.x + 0.5f, _currentCamPos.y, _currentCamPos.z));
-			_camera[_currentCamera]->Movement();
-		}
-	}
-	if (GetAsyncKeyState('J') & 0x8000)
-	{
-		carPosition.x -= 0.5f;
-		if (_currentCamera == 3)
-		{
-			_camera[_currentCamera]->SetWorldPosition(XMFLOAT3(_currentCamPos.x - 0.5f, _currentCamPos.y, _currentCamPos.z));
-			_camera[_currentCamera]->Movement();
-		}
-	}
 }
 
 void Application::Draw()
@@ -697,13 +604,12 @@ void Application::Draw()
 	XMMATRIX crowd4 = XMLoadFloat4x4(&_crowdWorld4);	
 	XMMATRIX crowd5 = XMLoadFloat4x4(&_crowdWorld5);
 	XMMATRIX crowd6 = XMLoadFloat4x4(&_crowdWorld6);
-
-	
+		
 	// Sets up camera view matrices
-	XMMATRIX mainView = XMLoadFloat4x4(&_camera[_currentCamera]->GetViewMatrix());
+	XMMATRIX mainView = XMLoadFloat4x4(&_camera->GetViewMatrix());
 
 	// Sets up camera projection matrices
-	XMMATRIX mainProjection = XMLoadFloat4x4(&_camera[_currentCamera]->GetProjectionMatrix());
+	XMMATRIX mainProjection = XMLoadFloat4x4(&_camera->GetProjectionMatrix());
     
 	// Creates constant buffer
 	ConstantBuffer cb;
@@ -723,8 +629,8 @@ void Application::Draw()
 	cb.mWorld = XMMatrixTranspose(redCarWorld);
 	cb.mView = XMMatrixTranspose(mainView);
 	cb.mProjection = XMMatrixTranspose(mainProjection);
-	// Updates camera eye world position
-	cb.eyePosW = _camera[_currentCamera]->GetWorldPosition();
+	// Updates camera position world position
+	cb.eyePosW = _camera->GetWorldPosition();
 
 
 	// Sets up object textures

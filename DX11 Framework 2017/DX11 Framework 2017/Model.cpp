@@ -82,7 +82,7 @@ void Model::DrawModel(ID3D11VertexShader* _pVS, ID3D11PixelShader* _pPS, ID3D11B
 	cb.mView = XMMatrixTranspose(mainView);
 	cb.mProjection = XMMatrixTranspose(mainProjection);
 	
-	// Updates camera eye world position
+	// Updates camera position world position
 	cb.eyePosW = _camera[currentCam]->GetWorldPosition();
 
 	_deviceContext->PSSetShaderResources(0, 1, &_pTextureRV);

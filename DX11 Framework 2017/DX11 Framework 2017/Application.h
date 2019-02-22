@@ -37,7 +37,7 @@ private:
 	ID3D11Buffer*           _pConstantBuffer;
 
 	// Sets Textures
-	ID3D11Texture2D*		_pTexture2D;
+	ID3D11Texture2D* _pTexture2D;
 	ID3D11ShaderResourceView* _pRedCarTexture;
 	ID3D11ShaderResourceView* _pBlueCarTexture;
 	ID3D11ShaderResourceView* _pskyBoxTexture;
@@ -76,14 +76,11 @@ private:
 	XMFLOAT4X4				_crowdWorld6;
 
 	// World Cameras
-	static const int noOfCameras = 4;
-	Camera* _camera[noOfCameras];
-	int _currentCamera = 0;
-	XMFLOAT3 _currentCamPos;
-	XMFLOAT3 _currentCarPos;
+	Camera* _camera;
 
 	// car position
 	XMFLOAT3 carPosition;
+	XMFLOAT3 _currentCarPos;
 	
 	// Mesh Data
 	MeshData _cubeMesh;

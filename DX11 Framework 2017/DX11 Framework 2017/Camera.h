@@ -9,7 +9,7 @@ class Camera
 {
 private:
 	// Initialize the view matrix
-	XMVECTOR eye;
+	XMVECTOR position;
 	XMVECTOR at;
 	XMVECTOR up;
 	XMFLOAT4X4 view;
@@ -25,9 +25,9 @@ private:
 	float forwardMoveSpeed, backwardMoveSpeed;
 	float leftTurnSpeed, rightTurnSpeed;
 	float ascendingSpeed, descendingSpeed;
-	float lookUpSpeed, lookDownSpeed;
+	const float lookVerticalSpeed;
 
-	float rotationX, rotationY, rotationZ; 
+	float rotationX, rotationY; 
 
 
 private:
@@ -42,7 +42,7 @@ private:
 	void DownwardTurn();
 
 public:
-	Camera(UINT windowHeight, UINT windowWidth);
+	Camera(const XMFLOAT3 &worldPos, const UINT &windowHeight, const UINT &windowWidth);
 	void Release();
 
 	// Camera Movement method
@@ -50,15 +50,20 @@ public:
 	void Update();
 
 	// Variables Getters & Setters 
-	void SetWorldPosition(XMFLOAT3 eyePos);
-	void SetAt(XMFLOAT3 at);
-	void SetUp(XMVECTOR _up);
-	void SetViewMatrix(XMFLOAT4X4 view);
-	void SetProjectionMatrix(XMFLOAT4X4 _projection);
+	void SetWorldPosition(const XMFLOAT3& eyePos);
+	void SetAt(const XMFLOAT3& at);
+	void SetUp(const XMVECTOR& _up);
+	void SetViewMatrix(const XMFLOAT4X4& view);
+	void SetProjectionMatrix(const XMFLOAT4X4& _projection);
 
 	XMVECTOR GetEye() const, GetUp() const;
 	XMFLOAT3 GetAt() const;
 	XMFLOAT3 GetWorldPosition() const;
 	XMFLOAT4X4 GetViewMatrix() const;
 	XMFLOAT4X4 GetProjectionMatrix() const;
+
+	XMFLOAT3 Subtract(const XMFLOAT3 &left, const XMFLOAT3 &right) const
+	{
+		return XMFLOAT3(left.x - right.x, left.y - right.y, left.z - right.z);
+	}
 };
