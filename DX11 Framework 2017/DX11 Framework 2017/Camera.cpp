@@ -82,8 +82,6 @@ void Camera::BackwardMovement()
 	{
 		forwardMoveSpeed += 0.01f;
 
-
-
 		if (forwardMoveSpeed > 0.5f)
 			forwardMoveSpeed = 0.5f;
 	}
