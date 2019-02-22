@@ -1,4 +1,4 @@
 ﻿  Camera.cpp
-c:\users\d012120g.student\documents\dx11-framework\dx11 framework 2017\dx11 framework 2017\camera.cpp(199): warning C4458: declaration of 'at' hides class member
-  c:\users\d012120g.student\documents\dx11-framework\dx11 framework 2017\dx11 framework 2017\camera.h(13): note: see declaration of 'Camera::at'
-  DX11 Framework.vcxproj -> C:\Users\d012120g.STUDENT\Documents\DX11-Framework\DX11 Framework 2017\DX11 Framework 2017\Debug\DX11 Framework.exe
+c:\users\d012120g\documents\dx11-framework\dx11 framework 2017\dx11 framework 2017\camera.cpp(223): warning C4458: declaration of 'at' hides class member
+  c:\users\d012120g\documents\dx11-framework\dx11 framework 2017\dx11 framework 2017\camera.h(13): note: see declaration of 'Camera::at'
+  DX11 Framework.vcxproj -> C:\Users\d012120g\Documents\DX11-Framework\DX11 Framework 2017\DX11 Framework 2017\Debug\DX11 Framework.exe
