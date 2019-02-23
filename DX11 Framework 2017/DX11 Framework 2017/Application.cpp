@@ -55,8 +55,6 @@ Application::~Application()
 
 HRESULT Application::Initialise(HINSTANCE hInstance, int nCmdShow)
 {
-	carPosition = XMFLOAT3(0.0f, -4.0f, 5.0f); // Planet object size
-
 	if (FAILED(InitWindow(hInstance, nCmdShow)))
 	{
 		return E_FAIL;
@@ -356,8 +354,6 @@ HRESULT Application::InitDevice()
     //UINT offset = 0;
 	//_pImmediateContext->IASetVertexBuffers(0, 1, &_pCubeVertexBuffer, &stride, &offset);
 
-	_pImmediateContext2 = _pImmediateContext;
-
 	_cubeMesh = OBJLoader::Load("Models/cube.obj", _pd3dDevice, false);
 	_car = OBJLoader::Load("Models/car.obj", _pd3dDevice, false);
 	//_footballMesh = OBJLoader::Load("Models/sphere.obj", _pd3dDevice, false);
@@ -522,9 +518,6 @@ void Application::Update()
 
 void Application::ObjectAnimation(float t)
 {
-	// Animate the cube
-	XMStoreFloat4x4(&_redCarWorld, XMMatrixTranslation(carPosition.x, carPosition.y, carPosition.z));
-	XMStoreFloat4x4(&_blueCarWorld, XMMatrixTranslation(-carPosition.x, carPosition.y, -carPosition.z));
 	XMStoreFloat4x4(&_pitchWorld, XMMatrixScaling(30.0f, 0.0f, 30.0f) * XMMatrixTranslation(0.0f, -5.0f, 0.0f));
 	//_goalModel->ObjectAnimation(t);
 	//_footballModel->ObjectAnimation(t);
@@ -552,15 +545,20 @@ void Application::KeyboardFunctions()
 
 void Application::Draw()
 {   
-	// Clears Depth Buffer
-	_pImmediateContext->ClearDepthStencilView(_depthStencilView, D3D11_CLEAR_DEPTH | D3D11_CLEAR_STENCIL, 1.0f, 0);
-	_pImmediateContext2->ClearDepthStencilView(_depthStencilView, D3D11_CLEAR_DEPTH | D3D11_CLEAR_STENCIL, 1.0f, 0);
 
     // Clear the back buffer
     float ClearColor[4] = {0.30f, 0.20f, 0.60f, 1.0f}; // Background's RGBA values
-    _pImmediateContext->ClearRenderTargetView(_pRenderTargetView, ClearColor);
+	
+    _pImmediateContext->ClearRenderTargetView(_pRenderTargetView, ClearColor);	
+	_pImmediateContext->ClearDepthStencilView(_depthStencilView, D3D11_CLEAR_DEPTH | D3D11_CLEAR_STENCIL, 1.0f, 0); // Clears Depth Buffer
+
+
 	// "fine-tune" the blending equation
 	float blendFactor[4] = { 0.99f, 0.99f, 0.99f, 1.0f };
+	
+	// Sets up object textures
+	_pImmediateContext->PSSetShaderResources(0, 1, &_pfootballTexture);
+	_pImmediateContext->PSSetSamplers(0, 1, &_pSamplerLinear);
 
 	// Sets up world space
 	XMMATRIX redCarWorld = XMLoadFloat4x4(&_redCarWorld);
@@ -597,49 +595,13 @@ void Application::Draw()
 	cb.specularMaterial = _lights->specularMtrl;
 	cb.specularPower = _lights->specularPower;
 
-	// Update variables
-	cb.mWorld = XMMatrixTranspose(redCarWorld);
-	cb.mView = XMMatrixTranspose(mainView);
-	cb.mProjection = XMMatrixTranspose(mainProjection);
 	// Updates camera position world position
 	cb.eyePosW = _camera->GetWorldPosition();
-
-
-	// Sets up object textures
-	_pImmediateContext2->PSSetShaderResources(0, 1, &_pRedCarTexture);
-	_pImmediateContext2->PSSetSamplers(0, 1, &_pSamplerLinear);
-	// Uses constant buffers in shader
-	_pImmediateContext2->UpdateSubresource(_pConstantBuffer, 0, nullptr, &cb, 0, 0);
-	// Set the blend state for transparent objects
-	_pImmediateContext2->OMSetBlendState(0, 0, 0xffffffff);
-    // Sends shader data
-	_pImmediateContext2->VSSetShader(_pVertexShader, nullptr, 0);
-	_pImmediateContext2->VSSetConstantBuffers(0, 1, &_pConstantBuffer);
-	_pImmediateContext2->PSSetConstantBuffers(0, 1, &_pConstantBuffer);
-	_pImmediateContext2->PSSetShader(_pPixelShader, nullptr, 0);
-	// Renders sun cube 
-	_pImmediateContext2->DrawIndexed(_car.IndexCount, 0, 0);
 	
-
-	cb.mWorld = XMMatrixTranspose(blueCarWorld);
-	cb.mView = XMMatrixTranspose(mainView);
-	cb.mProjection = XMMatrixTranspose(mainProjection);
-	// Sets up object textures
-	_pImmediateContext2->PSSetShaderResources(0, 1, &_pBlueCarTexture);
-	_pImmediateContext2->PSSetSamplers(0, 1, &_pSamplerLinear);
-	_pImmediateContext2->UpdateSubresource(_pConstantBuffer, 0, nullptr, &cb, 0, 0);
-	// Set the default blend state (no blending) for opaque objects
-	_pImmediateContext2->OMSetBlendState(0, 0, 0xffffffff);
-	// Renders planet cube 
-	_pImmediateContext2->DrawIndexed(_car.IndexCount, 0, 0);
-
 	// Draws Planet
 	cb.mWorld = XMMatrixTranspose(footballWorld);
 	cb.mView = XMMatrixTranspose(mainView);
 	cb.mProjection = XMMatrixTranspose(mainProjection);
-	// Sets up object textures
-	_pImmediateContext->PSSetShaderResources(0, 1, &_pfootballTexture);
-	_pImmediateContext->PSSetSamplers(0, 1, &_pSamplerLinear);
 	_pImmediateContext->UpdateSubresource(_pConstantBuffer, 0, nullptr, &cb, 0, 0);
 	// Set the default blend state (no blending) for opaque objects
 	_pImmediateContext->OMSetBlendState(0, 0, 0xffffffff);
@@ -783,12 +745,7 @@ void Application::Draw()
 	_pImmediateContext->UpdateSubresource(_pConstantBuffer, 0, nullptr, &cb, 0, 0);
 	// Set the default blend state (no blending) for opaque objects
 	_pImmediateContext->OMSetBlendState(_transparency, blendFactor, 0xffffffff);
-
-
 	_pImmediateContext->DrawIndexed(_cubeMesh.IndexCount, 0, 0);
-	//_goalModel->DrawModel(_pVertexShader, _pPixelShader, _pConstantBuffer, _camera, _currentCamera, _transparency, false);
-
-	//_footballModel->DrawModel(_pVertexShader, _pPixelShader, _pConstantBuffer, _camera, _currentCamera, _transparency, true);
 
 	// Present our back buffer to our front buffer
     _pSwapChain->Present(1, 0);

@@ -26,5 +26,5 @@ private:
 	ID3D11SamplerState * _pSamplerLinear;
 	ID3D11DeviceContext* _deviceContext;
 	ID3D11Device* _device;
-	ID3D11ShaderResourceView* _pTextureRV;
+	ID3D11ShaderResourceView* _pTextureRV{};
 };

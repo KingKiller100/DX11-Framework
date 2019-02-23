@@ -26,12 +26,12 @@ private:
 	D3D_FEATURE_LEVEL       _featureLevel;
 	ID3D11Device*           _pd3dDevice;
 	ID3D11DeviceContext*    _pImmediateContext;
-	ID3D11DeviceContext* _pImmediateContext2;
 	IDXGISwapChain*         _pSwapChain;
 	ID3D11RenderTargetView* _pRenderTargetView;
 	ID3D11VertexShader*     _pVertexShader;
 	ID3D11PixelShader*      _pPixelShader;
 	ID3D11InputLayout*      _pVertexLayout;
+
 	ID3D11Buffer*           _pCubeVertexBuffer;
 	ID3D11Buffer*           _pCubeIndexBuffer;
 	ID3D11Buffer*           _pConstantBuffer;
@@ -57,9 +57,6 @@ private:
 	// Blend State
 	ID3D11BlendState* _transparency;
 
-	// Object Lighting
-	Lights* _lights;
-
 	// World Matrix
 	XMFLOAT4X4              _redCarWorld;
 	XMFLOAT4X4              _blueCarWorld;
@@ -72,20 +69,22 @@ private:
 	XMFLOAT4X4				_crowdWorld2;
 	XMFLOAT4X4				_crowdWorld3;
 	XMFLOAT4X4				_crowdWorld4;
-	XMFLOAT4X4				_crowdWorld5;
 	XMFLOAT4X4				_crowdWorld6;
+	XMFLOAT4X4				_crowdWorld5;
+
+
+	// Object Lighting
+	Lights* _lights;
 
 	// World Cameras
 	Camera* _camera;
-
-	// car position
-	XMFLOAT3 carPosition;
 	
 	// Mesh Data
 	MeshData _cubeMesh;
 	MeshData _footballMesh;
 	MeshData _skyBox;
 	MeshData _car;
+
 private:
 	HRESULT InitWindow(HINSTANCE hInstance, int nCmdShow);
 	HRESULT InitDevice();

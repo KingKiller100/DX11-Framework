@@ -37,7 +37,7 @@ Model::~Model()
 	if(_device) _device->Release();
 	if (_deviceContext) _deviceContext->Release();
 	if (_pSamplerLinear) _pSamplerLinear->Release();
-	if (_lights) _lights = nullptr;
+	if (_lights) { delete _lights;  _lights = nullptr; }
 	if (_pTextureRV) _pTextureRV->Release();
 }
 
@@ -51,42 +51,6 @@ void Model::Draw(ID3D11VertexShader* _pVS, ID3D11PixelShader* _pPS, ID3D11Buffer
 {
 	// "fine-tune" the blending equation
 	const float blendFactor[4] = { 0.95f, 0.95f, 0.995f, 1.0f };
-	
-	const XMMATRIX world = XMLoadFloat4x4(&_worldMatrix);
-
-	// Sets up camera view matrices
-	const XMMATRIX mainView = XMLoadFloat4x4(&_camera->GetViewMatrix());
-
-	// Sets up camera projection matrices
-	const XMMATRIX mainProjection = XMLoadFloat4x4(&_camera->GetProjectionMatrix());
-
-	// Creates constant buffer
-	ConstantBuffer cb;
-
-	// Update Lighting variables
-	cb.lightDirection = _lights->lightVecW;
-	cb.padding = _lights->padding;
-	cb.diffuseLight = _lights->diffuseLight;
-	cb.diffuseMaterial = _lights->diffuseMtrl;
-	cb.ambientLight = _lights->ambientLight;
-	cb.ambientMaterial = _lights->ambientMtrl;
-	cb.specularLight = _lights->specularLight;
-	cb.specularMaterial = _lights->specularMtrl;
-	cb.specularPower = _lights->specularPower;
-
-	// Update variables
-	cb.mWorld = XMMatrixTranspose(world);
-	cb.mView = XMMatrixTranspose(mainView);
-	cb.mProjection = XMMatrixTranspose(mainProjection);
-	
-	// Updates camera position world position
-	cb.eyePosW = _camera->GetWorldPosition();
-
-	_deviceContext->PSSetShaderResources(0, 1, &_pTextureRV);
-	_deviceContext->PSSetSamplers(0, 1, &_pSamplerLinear);
-
-	// Uses constant buffers in shader
-	_deviceContext->UpdateSubresource(_pCB, 0, nullptr, &cb, 0, 0);
 
 	if (_transparent)
 	{
