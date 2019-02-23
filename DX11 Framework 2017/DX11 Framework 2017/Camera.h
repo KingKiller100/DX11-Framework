@@ -15,10 +15,6 @@ private:
 	XMFLOAT4X4 view;
 	XMFLOAT4X4 projection;
 
-	// Camera position in world space
-	XMFLOAT3 worldPosition; 	
-	XMFLOAT3 atPos;
-
 	UINT _WindowHeight;
 	UINT _WindowWidth;
 
@@ -38,7 +34,7 @@ private:
 	void DownwardTurn();
 
 public:
-	Camera(const XMFLOAT3 &worldPos, const UINT &windowHeight, const UINT &windowWidth);
+	Camera(const UINT &windowHeight, const UINT &windowWidth);
 	void Release();
 
 	// Camera Movement method
@@ -57,9 +53,4 @@ public:
 	XMFLOAT3 GetWorldPosition() const;
 	XMFLOAT4X4 GetViewMatrix() const;
 	XMFLOAT4X4 GetProjectionMatrix() const;
-
-	XMFLOAT3 Subtract(const XMFLOAT3 &left, const XMFLOAT3 &right) const
-	{
-		return XMFLOAT3(left.x - right.x, left.y - right.y, left.z - right.z);
-	}
 };

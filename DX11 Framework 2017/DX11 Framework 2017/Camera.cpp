@@ -1,9 +1,9 @@
 #include "Camera.h"
 #include <ios>
 
-Camera::Camera(const XMFLOAT3 &worldPos, const UINT &windowHeight, const UINT &windowWidth) : worldPosition(worldPos), _WindowHeight(windowHeight), _WindowWidth(windowWidth)
+Camera::Camera(const UINT &windowHeight, const UINT &windowWidth) : _WindowHeight(windowHeight), _WindowWidth(windowWidth)
 {
-	position = XMVectorSet(worldPos.x, worldPos.y, worldPos.z, 1);
+	position = XMVectorSet(0, 5, 0, 1);
 	at = XMVectorSet(0.0f, 0.0f, 1.0f, 1.0f);
 	up = XMVectorSet(0.0f, 1.0f, 0.0f, 1.0f);
 
@@ -138,11 +138,6 @@ void Camera::SetProjectionMatrix(const XMFLOAT4X4& _projection)
 	projection = _projection;
 }
 
-XMFLOAT3 Camera::GetWorldPosition() const
-{
-	return worldPosition;
-}
-
 XMFLOAT4X4 Camera::GetViewMatrix() const
 {
 	return view;
@@ -158,14 +153,19 @@ XMVECTOR Camera::GetEye() const
 	return position;
 }
 
-XMVECTOR Camera::GetUp() const
+XMFLOAT3 Camera::GetWorldPosition() const
 {
-	return up;
+	return XMFLOAT3(position.m128_f32[0], position.m128_f32[1], position.m128_f32[2]);
 }
 
 XMFLOAT3 Camera::GetAt() const
 {
-	return atPos;
+	return XMFLOAT3(position.m128_f32[0], position.m128_f32[1], position.m128_f32[2]);
+}
+
+XMVECTOR Camera::GetUp() const
+{
+	return up;
 }
 
 void Camera::Release()

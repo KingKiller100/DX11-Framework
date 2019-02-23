@@ -1,4 +1,6 @@
 #include "Model.h"
+#include "DDSTextureLoader.h"
+#include "ConstantBuffer.h"
 
 Model::Model(MeshData meshData, wchar_t* texturePath, XMFLOAT4X4 worldMatrix, ID3D11Device * device, ID3D11DeviceContext* deviceContext, ID3D11SamplerState* samplerLinear)
 {
@@ -45,23 +47,18 @@ void Model::ObjectAnimation(float t)
 	XMStoreFloat4x4(&_worldMatrix, XMMatrixRotationZ(t) * XMMatrixRotationY(t) * XMMatrixRotationX(t));
 }
 
-void Model::DrawModel(ID3D11VertexShader* _pVS, ID3D11PixelShader* _pPS, ID3D11Buffer* _pCB, Camera* _camera[], int currentCam, ID3D11BlendState* _transparency, bool transparency)
+void Model::Draw(ID3D11VertexShader* _pVS, ID3D11PixelShader* _pPS, ID3D11Buffer* _pCB, Camera* _camera, ID3D11BlendState* _transparency, const bool& transparency) const
 {
-	ID3D11VertexShader* _pVertexShader = _pVS;
-	ID3D11PixelShader* _pPixelShader = _pPS;
-	ID3D11Buffer* _pConstantBuffer = _pCB;
-
 	// "fine-tune" the blending equation
-	float blendFactor[4] = { 0.95f, 0.95f, 0.995f, 1.0f };
-
-
-	XMMATRIX world = XMLoadFloat4x4(&_worldMatrix);
+	const float blendFactor[4] = { 0.95f, 0.95f, 0.995f, 1.0f };
+	
+	const XMMATRIX world = XMLoadFloat4x4(&_worldMatrix);
 
 	// Sets up camera view matrices
-	XMMATRIX mainView = XMLoadFloat4x4(&_camera[currentCam]->GetViewMatrix());
+	const XMMATRIX mainView = XMLoadFloat4x4(&_camera->GetViewMatrix());
 
 	// Sets up camera projection matrices
-	XMMATRIX mainProjection = XMLoadFloat4x4(&_camera[currentCam]->GetProjectionMatrix());
+	const XMMATRIX mainProjection = XMLoadFloat4x4(&_camera->GetProjectionMatrix());
 
 	// Creates constant buffer
 	ConstantBuffer cb;
@@ -83,15 +80,15 @@ void Model::DrawModel(ID3D11VertexShader* _pVS, ID3D11PixelShader* _pPS, ID3D11B
 	cb.mProjection = XMMatrixTranspose(mainProjection);
 	
 	// Updates camera position world position
-	cb.eyePosW = _camera[currentCam]->GetWorldPosition();
+	cb.eyePosW = _camera->GetWorldPosition();
 
 	_deviceContext->PSSetShaderResources(0, 1, &_pTextureRV);
 	_deviceContext->PSSetSamplers(0, 1, &_pSamplerLinear);
 
 	// Uses constant buffers in shader
-	_deviceContext->UpdateSubresource(_pConstantBuffer, 0, nullptr, &cb, 0, 0);
+	_deviceContext->UpdateSubresource(_pCB, 0, nullptr, &cb, 0, 0);
 
-	if (_transparent == true)
+	if (_transparent)
 	{
 		// Set the blend state for transparent objects
 		_deviceContext->OMSetBlendState(_transparency, blendFactor, 0xffffffff);
@@ -99,14 +96,15 @@ void Model::DrawModel(ID3D11VertexShader* _pVS, ID3D11PixelShader* _pPS, ID3D11B
 	else
 	{
 		// Set the blend state for transparent objects
-		_deviceContext->OMSetBlendState(0, 0, 0xffffffff);
+		_deviceContext->OMSetBlendState(nullptr, nullptr, 0xffffffff);
 	}
 	
 	// Sends shader data
-	_deviceContext->VSSetShader(_pVertexShader, nullptr, 0);
-	_deviceContext->VSSetConstantBuffers(0, 1, &_pConstantBuffer);
-	_deviceContext->PSSetConstantBuffers(0, 1, &_pConstantBuffer);
-	_deviceContext->PSSetShader(_pPixelShader, nullptr, 0);
+	_deviceContext->VSSetShader(_pVS, nullptr, 0);
+	_deviceContext->VSSetConstantBuffers(0, 1, &_pCB);
+	_deviceContext->PSSetConstantBuffers(0, 1, &_pCB);
+	_deviceContext->PSSetShader(_pPS, nullptr, 0);
+
 	// Renders
 	_deviceContext->DrawIndexed(_meshData.IndexCount, 0, 0);
 }

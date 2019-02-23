@@ -94,7 +94,7 @@ HRESULT Application::Initialise(HINSTANCE hInstance, int nCmdShow)
 	_lights = new Lights();
 
 	// Initialise camera
-	_camera = new Camera(XMFLOAT3(0, 5,0), _windowHeight, _windowWidth);
+	_camera = new Camera(_windowHeight, _windowWidth);
 
 	CreateSamplerState();
 
@@ -514,20 +514,6 @@ void Application::Update()
     // Update our time
     static float t = 1.f/60.f;
 
-    // if (_driverType == D3D_DRIVER_TYPE_REFERENCE)
-    // {
-    //     t += (float) XM_PI * 0.0125f;
-    // }
-    // else
-    // {
-    //     static DWORD dwTimeStart = 0;
-    //     DWORD dwTimeCur = GetTickCount();
-    //
-    //     if (dwTimeStart == 0)
-    //         dwTimeStart = dwTimeCur;
-    //
-    //     t = (dwTimeCur - dwTimeStart) / 1000.0f;
-    // }
 	_camera->Update();
 
 	ObjectAnimation(t);	
@@ -559,18 +545,9 @@ void Application::ObjectAnimation(float t)
 void Application::KeyboardFunctions()
 {
 	if (GetAsyncKeyState('R') & 0x8000)
-	{
-		_camera->SetWorldPosition(XMFLOAT3(_camera->GetWorldPosition().x + 0.05f, _camera->GetWorldPosition().y + 0.05f, _camera->GetWorldPosition().z));
-	}
-	
-	if (GetAsyncKeyState(VK_SPACE))
-	{
-		_pImmediateContext->RSSetState(_wireFrame);
-	}
-	else
-	{
-		_pImmediateContext->RSSetState(nullptr);
-	}
+		_camera->SetWorldPosition(XMFLOAT3(.0f, 5.f, .0f));
+
+	_pImmediateContext->RSSetState(GetAsyncKeyState(VK_SPACE) ? _wireFrame : nullptr);
 }
 
 void Application::Draw()

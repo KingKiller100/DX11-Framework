@@ -1,6 +1,7 @@
 #include "OBJLoader.h"
 #include <iostream>
 #include <string>
+#include <fstream>		//For loading in an external file
 
 using namespace std; 
 bool OBJLoader::FindSimilarVertex(const SimpleVertex& vertex, std::map<SimpleVertex, unsigned short>& vertexToIndexMap, unsigned short& index)

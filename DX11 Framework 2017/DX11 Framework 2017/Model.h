@@ -1,15 +1,10 @@
 #pragma once
 
 #include <d3d11_1.h>
-#include <d3dcompiler.h>
 #include <DirectXMath.h>
-#include <cstdlib>
 #include "Lights.h"
-#include "Structures.h"
-#include "ConstantBuffer.h"
 #include "Camera.h"
 #include "OBJLoader.h"
-#include "DDSTextureLoader.h"
 
 using namespace DirectX;
 
@@ -20,7 +15,8 @@ public:
 	~Model();
 
 	void ObjectAnimation(float t);
-	void DrawModel(ID3D11VertexShader* _pVertexShader, ID3D11PixelShader* _pPixelShader, ID3D11Buffer* _pConstantBuffer, Camera* _camera[], int currentCam, ID3D11BlendState* _transparency, bool transparency);
+	void Draw(ID3D11VertexShader* _pVertexShader, ID3D11PixelShader* _pPixelShader, ID3D11Buffer* _pConstantBuffer, Camera* _camera, ID3D11BlendState* _transparency, const
+	          bool& transparency) const;
 private:
 	MeshData _meshData;
 	XMFLOAT4X4 _worldMatrix;
