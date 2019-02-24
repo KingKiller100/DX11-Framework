@@ -17,7 +17,7 @@ int WINAPI wWinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPWSTR lpCmdLi
 
     while (WM_QUIT != msg.message)
     {
-        if (PeekMessage(&msg, NULL, 0, 0, PM_REMOVE)) /// any error mesage Windows would send 
+        if (PeekMessage(&msg, NULL, 0, 0, PM_REMOVE)) /// any error message Windows would send 
         {
             TranslateMessage(&msg);
             DispatchMessage(&msg);
@@ -32,5 +32,5 @@ int WINAPI wWinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPWSTR lpCmdLi
 	delete theApp;
 	theApp = nullptr;
 
-    return (int) msg.wParam;
+    return int(msg.wParam);
 }

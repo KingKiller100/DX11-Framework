@@ -36,13 +36,19 @@ private:
 	ID3D11Buffer*           _pCubeIndexBuffer;
 	ID3D11Buffer*           _pConstantBuffer;
 
+	ID3D11DepthStencilState* DSLessEqual;
+	ID3D11RasterizerState* RSCullNone;
+
+	ID3D11RasterizerState* CCWcullMode;
+	ID3D11RasterizerState* CWcullMode;
+
 	// Sets Textures
 	ID3D11Texture2D* _pTexture2D;
 	ID3D11ShaderResourceView* _pRedCarTexture;
 	ID3D11ShaderResourceView* _pBlueCarTexture;
-	ID3D11ShaderResourceView* _pskyBoxTexture;
+	ID3D11ShaderResourceView* _pSkyBoxTexture;
 	ID3D11ShaderResourceView* _pGoalTexture;
-	ID3D11ShaderResourceView* _pfootballTexture;
+	ID3D11ShaderResourceView* _pFootballTexture;
 	ID3D11ShaderResourceView* _pPitchTexture;
 	ID3D11ShaderResourceView* _pCrowdTexture;
 	ID3D11SamplerState * _pSamplerLinear;
@@ -55,7 +61,7 @@ private:
 	ID3D11Texture2D* _depthStencilBuffer;
 
 	// Blend State
-	ID3D11BlendState* _transparency;
+	ID3D11BlendState* _blendState;
 
 	// World Matrix
 	XMFLOAT4X4              _redCarWorld;
@@ -72,18 +78,13 @@ private:
 	XMFLOAT4X4				_crowdWorld6;
 	XMFLOAT4X4				_crowdWorld5;
 
+	std::vector<Model*> modelList;
 
 	// Object Lighting
 	Lights* _lights;
 
 	// World Cameras
 	Camera* _camera;
-	
-	// Mesh Data
-	MeshData _cubeMesh;
-	MeshData _footballMesh;
-	MeshData _skyBox;
-	MeshData _car;
 
 private:
 	HRESULT InitWindow(HINSTANCE hInstance, int nCmdShow);
@@ -103,13 +104,18 @@ public:
 	HRESULT Initialise(HINSTANCE hInstance, int nCmdShow);
 
 	void Update();
+	void ObjectAnimation(const float& t);
+	void KeyboardFunctions();
+
 	void Draw();
+
+	DXGI_SWAP_CHAIN_DESC CreateSwapChain(const UINT& sampleNum) const;
 
 	void CreateConstantBuffer(HRESULT hr);
 	void CreateRasterizerState(HRESULT hr);
 	void CreateBlendingEquations();
 	void CreateSamplerState();
-	void ObjectAnimation(float t);
-	void KeyboardFunctions();
+	void SetViewport() const;
+	void CreateDepthBuffer(const UINT& sampleNum);
 };
 

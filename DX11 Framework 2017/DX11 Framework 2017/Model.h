@@ -2,29 +2,44 @@
 
 #include <d3d11_1.h>
 #include <DirectXMath.h>
-#include "Lights.h"
-#include "Camera.h"
 #include "OBJLoader.h"
 
 using namespace DirectX;
 
+
+struct Material
+{
+	XMFLOAT4 diffuse;
+	XMFLOAT4 ambient;
+	XMFLOAT4 specular;
+	float specularPower;
+
+	Material(const XMFLOAT4 &diffuse, const XMFLOAT4 &ambient, const XMFLOAT4 &specular, const float &power) : diffuse(diffuse), ambient(ambient), specular(specular), specularPower(power)
+	{/*Empty*/}
+};
+
 class Model
 {
 public:
-	Model(MeshData mesh, wchar_t* texturePath, XMFLOAT4X4 worldMatrix, ID3D11Device* device, ID3D11DeviceContext* deviceContext, ID3D11SamplerState* samplerLinear);
+	Model(const MeshData &mesh, const Material &material);
 	~Model();
 
-	void ObjectAnimation(float t);
-	void Draw(ID3D11VertexShader* _pVertexShader, ID3D11PixelShader* _pPixelShader, ID3D11Buffer* _pConstantBuffer, Camera* _camera, ID3D11BlendState* _transparency, const
-	          bool& transparency) const;
-private:
-	MeshData _meshData;
-	XMFLOAT4X4 _worldMatrix;
-	Lights* _lights;
-	bool _transparent;
+	void Update(const float &deltaTime);
+	void Draw(ID3D11DeviceContext* _deviceContext, ID3D11BlendState* _blendState, const bool& transparent) const;
+	
+	Material GetMaterial() const									{ return material; }
 
-	ID3D11SamplerState * _pSamplerLinear;
-	ID3D11DeviceContext* _deviceContext;
-	ID3D11Device* _device;
-	ID3D11ShaderResourceView* _pTextureRV{};
+	void SetTextureRV(ID3D11ShaderResourceView * tRV)				{ _textureRV = tRV; }
+	ID3D11ShaderResourceView *GetTextureRV() const					{ return _textureRV; }
+	bool HasTexture() const											{ return _textureRV; }
+
+	void SetMatrix(const XMMATRIX &_matrix)							{ matrix = _matrix; }
+	XMMATRIX GetMatrix() const										{ return matrix; }
+
+private:
+	Material material;
+	MeshData meshData;
+	XMMATRIX matrix;
+
+	ID3D11ShaderResourceView* _textureRV{};
 };

@@ -42,7 +42,7 @@ Application::Application()
 	
 	// Texture Pointers
 	_pGoalTexture = nullptr;
-	_pfootballTexture = nullptr;
+	_pFootballTexture = nullptr;
 	_pPitchTexture = nullptr;
 
 	_pSamplerLinear = nullptr;
@@ -55,6 +55,8 @@ Application::~Application()
 
 HRESULT Application::Initialise(HINSTANCE hInstance, int nCmdShow)
 {
+	srand(145);
+
 	if (FAILED(InitWindow(hInstance, nCmdShow)))
 	{
 		return E_FAIL;
@@ -73,6 +75,23 @@ HRESULT Application::Initialise(HINSTANCE hInstance, int nCmdShow)
 		return E_FAIL;
 	}
 
+	// _pImmediateContext->IASetVertexBuffers(0, 1, &_car.VertexBuffer, &_car.VBStride, &_car.VBOffset);
+	// _pImmediateContext->IASetIndexBuffer(_car.IndexBuffer, DXGI_FORMAT_R16_UINT, 0);
+	//
+	// _pImmediateContext->IASetVertexBuffers(0, 1, &_skyBox.VertexBuffer, &_skyBox.VBStride, &_skyBox.VBOffset);
+	// _pImmediateContext->IASetIndexBuffer(_skyBox.IndexBuffer, DXGI_FORMAT_R16_UINT, 0);
+	//
+	// _pImmediateContext->IASetVertexBuffers(8, 1, &_footballMesh.VertexBuffer, &_footballMesh.VBStride, &_footballMesh.VBOffset);
+	// _pImmediateContext->IASetIndexBuffer(_footballMesh.IndexBuffer, DXGI_FORMAT_R16_UINT, 0);
+
+	CreateDDSTextureFromFile(_pd3dDevice, L"Textures/Goal.dds", nullptr, &_pGoalTexture);
+	CreateDDSTextureFromFile(_pd3dDevice, L"Textures/football.dds", nullptr, &_pFootballTexture);
+	CreateDDSTextureFromFile(_pd3dDevice, L"Textures/footballPitch.dds", nullptr, &_pPitchTexture);
+	CreateDDSTextureFromFile(_pd3dDevice, L"Textures/car.dds", nullptr, &_pRedCarTexture);
+	CreateDDSTextureFromFile(_pd3dDevice, L"Textures/BlueCar.dds", nullptr, &_pBlueCarTexture);
+	CreateDDSTextureFromFile(_pd3dDevice, L"Textures/fence.dds", nullptr, &_pSkyBoxTexture);
+	CreateDDSTextureFromFile(_pd3dDevice, L"Textures/crowd.dds", nullptr, &_pCrowdTexture);
+
 	// Initialize the world matrix
 	XMStoreFloat4x4(&_redCarWorld, XMMatrixIdentity());
 	XMStoreFloat4x4(&_blueCarWorld, XMMatrixIdentity());
@@ -88,13 +107,51 @@ HRESULT Application::Initialise(HINSTANCE hInstance, int nCmdShow)
 	XMStoreFloat4x4(&_crowdWorld5, XMMatrixIdentity());
 	XMStoreFloat4x4(&_crowdWorld6, XMMatrixIdentity());
 
+	// Sets up world space
+	XMMATRIX redCarWorld = XMLoadFloat4x4(&_redCarWorld);
+	XMMATRIX blueCarWorld = XMLoadFloat4x4(&_blueCarWorld);
+	XMMATRIX skyBoxWorld = XMLoadFloat4x4(&_skyBoxWorld);
+	XMMATRIX footballWorld = XMLoadFloat4x4(&_footballWorld);
+	XMMATRIX pitch = XMLoadFloat4x4(&_pitchWorld);
+	XMMATRIX goal = XMLoadFloat4x4(&_goalWorld);
+	XMMATRIX goal2 = XMLoadFloat4x4(&_goalWorld2);
+	XMMATRIX crowd = XMLoadFloat4x4(&_crowdWorld);
+	XMMATRIX crowd2 = XMLoadFloat4x4(&_crowdWorld2);
+	XMMATRIX crowd3 = XMLoadFloat4x4(&_crowdWorld3);
+	XMMATRIX crowd4 = XMLoadFloat4x4(&_crowdWorld4);
+	XMMATRIX crowd5 = XMLoadFloat4x4(&_crowdWorld5);
+	XMMATRIX crowd6 = XMLoadFloat4x4(&_crowdWorld6);
+
+	// Initialise Model
+	// _goalModel = new Model(OBJLoader::Load("Models/cube.obj", _pd3dDevice, false), L"Textures/Crate_COLOR.dds", _world, _pd3dDevice, _pImmediateContext, _pSamplerLinear);
+
+	// _footballModel = new Model(OBJLoader::Load("Models/Hercules.obj", _pd3dDevice, true), L"Textures/football.dds", _worldX, _pd3dDevice, _pImmediateContext, _pSamplerLinear);
+
+	const auto _cubeMesh = OBJLoader::Load("Models/cube.obj", _pd3dDevice, false);
+	const auto _car = OBJLoader::Load("Models/car.obj", _pd3dDevice, false);
+	const auto _footballMesh = OBJLoader::Load("Models/sphere.obj", _pd3dDevice, false);
+	const auto _skyBox = OBJLoader::Load("Models/cube.obj", _pd3dDevice, true);
+
+	Material shinyMaterial(XMFLOAT4(.3f, .3f, .3f, 1.f),
+		XMFLOAT4(1.0f, 1.0f, 1.0f, 1.0f),
+		XMFLOAT4(0.5f, 0.5f, 0.5f, 1.0f),
+		10.f);
+
+	Model *cubeModel = new Model(_cubeMesh, shinyMaterial);
+	cubeModel->SetTextureRV(_pBlueCarTexture);
+	cubeModel->SetMatrix(blueCarWorld);
+	modelList.emplace_back(cubeModel);
+
+	Model *skyBoxModel = new Model(_skyBox, shinyMaterial);
+	skyBoxModel->SetTextureRV(_pSkyBoxTexture);
+	skyBoxModel->SetMatrix(skyBoxWorld);
+	modelList.emplace_back(skyBoxModel);
+
 	//Initialise Lighting
 	_lights = new Lights();
 
 	// Initialise camera
 	_camera = new Camera(_windowHeight, _windowWidth);
-
-	CreateSamplerState();
 
 	return S_OK;
 }
@@ -165,7 +222,7 @@ HRESULT Application::InitShadersAndInputLayout()
 		{ "TEXCOORD", 0, DXGI_FORMAT_R32G32_FLOAT, 0, 24, D3D11_INPUT_PER_VERTEX_DATA, 0 },
 	};
 
-	UINT numElements = ARRAYSIZE(layout);
+	const UINT numElements = ARRAYSIZE(layout);
 
     // Create the input layout
 	hr = _pd3dDevice->CreateInputLayout(layout, numElements, pVSBlob->GetBufferPointer(),
@@ -177,6 +234,8 @@ HRESULT Application::InitShadersAndInputLayout()
 
     // Set the input layout
     _pImmediateContext->IASetInputLayout(_pVertexLayout);
+
+	CreateSamplerState();
 
 	return hr;
 }
@@ -191,12 +250,12 @@ HRESULT Application::InitWindow(HINSTANCE hInstance, int nCmdShow)
     wcex.cbClsExtra = 0;
     wcex.cbWndExtra = 0;
     wcex.hInstance = hInstance;
-    wcex.hIcon = LoadIcon(hInstance, (LPCTSTR)IDI_TUTORIAL1);
+    wcex.hIcon = LoadIcon(hInstance, LPCTSTR(IDI_TUTORIAL1));
     wcex.hCursor = LoadCursor(NULL, IDC_ARROW );
     wcex.hbrBackground = (HBRUSH)(COLOR_WINDOW + 1);
     wcex.lpszMenuName = nullptr;
-    wcex.lpszClassName = L"TutorialWindowClass";
-    wcex.hIconSm = LoadIcon(wcex.hInstance, (LPCTSTR)IDI_TUTORIAL1);
+    wcex.lpszClassName = L"FYPWindowClass";
+    wcex.hIconSm = LoadIcon(wcex.hInstance, reinterpret_cast<LPCTSTR>(IDI_TUTORIAL1));
     if (!RegisterClassEx(&wcex))
         return E_FAIL;
 
@@ -204,7 +263,7 @@ HRESULT Application::InitWindow(HINSTANCE hInstance, int nCmdShow)
     _hInst = hInstance;
     RECT rc = {0, -30, 720, 720/1.5};
     AdjustWindowRect(&rc, WS_OVERLAPPEDWINDOW, FALSE);
-    _hWnd = CreateWindow(L"TutorialWindowClass", L"DX11 Framework", WS_OVERLAPPEDWINDOW,
+    _hWnd = CreateWindow(L"FYPWindowClass", L"Cloth Simulation Framework", WS_OVERLAPPEDWINDOW,
                          CW_USEDEFAULT, CW_USEDEFAULT, rc.right - rc.left, rc.bottom - rc.top, nullptr, nullptr, hInstance,
                          nullptr);
     if (!_hWnd)
@@ -235,7 +294,7 @@ HRESULT Application::CompileShaderFromFile(WCHAR* szFileName, LPCSTR szEntryPoin
     if (FAILED(hr))
     {
         if (pErrorBlob != nullptr)
-            OutputDebugStringA((char*)pErrorBlob->GetBufferPointer());
+            OutputDebugStringA(static_cast<char*>(pErrorBlob->GetBufferPointer()));
 
         if (pErrorBlob) pErrorBlob->Release();
 
@@ -264,7 +323,7 @@ HRESULT Application::InitDevice()
         D3D_DRIVER_TYPE_REFERENCE,
     };
 
-    UINT numDriverTypes = ARRAYSIZE(driverTypes);
+    const UINT numDriverTypes = ARRAYSIZE(driverTypes);
 
     D3D_FEATURE_LEVEL featureLevels[] =
     {
@@ -273,21 +332,11 @@ HRESULT Application::InitDevice()
         D3D_FEATURE_LEVEL_10_0,
     };
 
-	UINT numFeatureLevels = ARRAYSIZE(featureLevels);
+	const UINT numFeatureLevels = ARRAYSIZE(featureLevels);
 
-    DXGI_SWAP_CHAIN_DESC sd;
-    ZeroMemory(&sd, sizeof(sd));
-    sd.BufferCount = 1;
-    sd.BufferDesc.Width =  _windowWidth;
-    sd.BufferDesc.Height = _windowHeight;
-    sd.BufferDesc.Format = DXGI_FORMAT_R8G8B8A8_UNORM; // non negative, normalised number
-    sd.BufferDesc.RefreshRate.Numerator = 60;
-    sd.BufferDesc.RefreshRate.Denominator = 1;
-    sd.BufferUsage = DXGI_USAGE_RENDER_TARGET_OUTPUT; // pipeline will render to this buffer and then render to screen - render target
-    sd.OutputWindow = _hWnd;
-    sd.SampleDesc.Count = 1;
-    sd.SampleDesc.Quality = 0;
-    sd.Windowed = TRUE;
+	const UINT sampleNum = 4;
+
+	const auto sd = CreateSwapChain(sampleNum);
 
     for (UINT driverTypeIndex = 0; driverTypeIndex < numDriverTypes; driverTypeIndex++)
     {
@@ -314,88 +363,25 @@ HRESULT Application::InitDevice()
     if (FAILED(hr))
         return hr;
 
-	//Setup depth buffer
-	D3D11_TEXTURE2D_DESC depthStencilDesc;
-
-	depthStencilDesc.Width =  _windowWidth;
-	depthStencilDesc.Height = _windowHeight;
-	depthStencilDesc.MipLevels = 1;
-	depthStencilDesc.ArraySize = 1;
-	depthStencilDesc.Format = DXGI_FORMAT_D24_UNORM_S8_UINT;
-	depthStencilDesc.SampleDesc.Count = 1;
-	depthStencilDesc.SampleDesc.Quality = 0;
-	depthStencilDesc.Usage = D3D11_USAGE_DEFAULT;
-	depthStencilDesc.BindFlags = D3D11_BIND_DEPTH_STENCIL;
-	depthStencilDesc.CPUAccessFlags = 0;
-	depthStencilDesc.MiscFlags = 0;
-
-	_pd3dDevice->CreateTexture2D(&depthStencilDesc, nullptr, &_depthStencilBuffer);
-	_pd3dDevice->CreateDepthStencilView(_depthStencilBuffer, nullptr, &_depthStencilView);
-
-
-    _pImmediateContext->OMSetRenderTargets(1, &_pRenderTargetView, _depthStencilView);
-
-    // Setup the viewport
-    D3D11_VIEWPORT vp;
-    vp.Width = (FLOAT) _windowWidth; //specifies whoch areas of the screen to render to
-    vp.Height = (FLOAT)_windowHeight;
-    vp.MinDepth = 0.0f;
-    vp.MaxDepth = 1.0f;
-    vp.TopLeftX = 0;
-    vp.TopLeftY = 0;
-    _pImmediateContext->RSSetViewports(1, &vp);
+	SetViewport();
 
 	InitShadersAndInputLayout();
 
-	//InitCubeVertexBuffer();
-
-    // Set vertex buffer
-    //UINT stride = sizeof(SimpleVertex);
-    //UINT offset = 0;
-	//_pImmediateContext->IASetVertexBuffers(0, 1, &_pCubeVertexBuffer, &stride, &offset);
-
-	_cubeMesh = OBJLoader::Load("Models/cube.obj", _pd3dDevice, false);
-	_car = OBJLoader::Load("Models/car.obj", _pd3dDevice, false);
-	//_footballMesh = OBJLoader::Load("Models/sphere.obj", _pd3dDevice, false);
-	_skyBox = OBJLoader::Load("Models/cube.obj", _pd3dDevice, true);
-
-	
-	CreateDDSTextureFromFile(_pd3dDevice, L"Textures/Goal.dds", nullptr, &_pGoalTexture);
-	CreateDDSTextureFromFile(_pd3dDevice, L"Textures/football.dds", nullptr, &_pfootballTexture);
-	CreateDDSTextureFromFile(_pd3dDevice, L"Textures/footballPitch.dds", nullptr, &_pPitchTexture);
-	CreateDDSTextureFromFile(_pd3dDevice, L"Textures/car.dds", nullptr, &_pRedCarTexture);
-	CreateDDSTextureFromFile(_pd3dDevice, L"Textures/BlueCar.dds", nullptr, &_pBlueCarTexture);
-	CreateDDSTextureFromFile(_pd3dDevice, L"Textures/fence.dds", nullptr, &_pskyBoxTexture);
-	CreateDDSTextureFromFile(_pd3dDevice, L"Textures/crowd.dds", nullptr, &_pCrowdTexture);
-
-	_pImmediateContext2->IASetVertexBuffers(0, 1, &_car.VertexBuffer, &_car.VBStride, &_car.VBOffset);
-	_pImmediateContext2->IASetIndexBuffer(_car.IndexBuffer, DXGI_FORMAT_R16_UINT, 0);
-
-    _pImmediateContext->IASetVertexBuffers(0, 1, &_skyBox.VertexBuffer, &_skyBox.VBStride, &_skyBox.VBOffset);
-	_pImmediateContext->IASetIndexBuffer(_skyBox.IndexBuffer, DXGI_FORMAT_R16_UINT, 0);
-
-	
-	//_pImmediateContext->IASetVertexBuffers(8, 1, &_footballMesh.VertexBuffer, &_footballMesh.VBStride, &_footballMesh.VBOffset);
-	//_pImmediateContext->IASetIndexBuffer(_footballMesh.IndexBuffer, DXGI_FORMAT_R16_UINT, 0);
-			
-	//InitCubeIndexBuffer();
-
-    // Set index buffer
-    //_pImmediateContext->IASetIndexBuffer(_pCubeIndexBuffer, DXGI_FORMAT_R16_UINT, 0);
-
-    // Set primitive topology
-    _pImmediateContext->IASetPrimitiveTopology(D3D11_PRIMITIVE_TOPOLOGY_TRIANGLELIST);
+	// Set primitive topology
+	_pImmediateContext->IASetPrimitiveTopology(D3D11_PRIMITIVE_TOPOLOGY_TRIANGLELIST);
 
 	CreateConstantBuffer(hr);
 
+	if (FAILED(hr))
+		return hr;
+
+	CreateDepthBuffer(sampleNum);
+
+	_pd3dDevice->CreateDepthStencilView(_depthStencilBuffer, nullptr, &_depthStencilView);
+	_pImmediateContext->OMSetRenderTargets(1, &_pRenderTargetView, _depthStencilView);
+
 	CreateRasterizerState(hr);
-
-
-	// Initialise Model
-	//_goalModel = new Model(OBJLoader::Load("Models/cube.obj", _pd3dDevice, false), L"Textures/Crate_COLOR.dds", _world, _pd3dDevice, _pImmediateContext, _pSamplerLinear);
-
-//	_footballModel = new Model(OBJLoader::Load("Models/Hercules.obj", _pd3dDevice, true), L"Textures/football.dds", _worldX, _pd3dDevice, _pImmediateContext, _pSamplerLinear);
-
+	
     if (FAILED(hr))
         return hr;
 
@@ -403,6 +389,56 @@ HRESULT Application::InitDevice()
 
 	return S_OK;
 
+}
+
+DXGI_SWAP_CHAIN_DESC Application::CreateSwapChain(const UINT &sampleNum) const
+{
+	DXGI_SWAP_CHAIN_DESC sd;
+	ZeroMemory(&sd, sizeof(sd));
+	sd.BufferCount = 1;
+	sd.BufferDesc.Width = _windowWidth;
+	sd.BufferDesc.Height = _windowHeight;
+	sd.BufferDesc.Format = DXGI_FORMAT_R8G8B8A8_UNORM; // non negative, normalised number
+	sd.BufferDesc.RefreshRate.Numerator = 60;
+	sd.BufferDesc.RefreshRate.Denominator = 1;
+	sd.BufferUsage = DXGI_USAGE_RENDER_TARGET_OUTPUT; // pipeline will render to this buffer and then render to screen - render target
+	sd.OutputWindow = _hWnd;
+	sd.SampleDesc.Count = sampleNum;
+	sd.SampleDesc.Quality = 0;
+	sd.Windowed = TRUE;
+
+	return sd;
+}
+
+void Application::SetViewport() const
+{
+	// Setup the viewport
+	D3D11_VIEWPORT vp;
+	vp.Width = FLOAT(_windowWidth); //specifies which areas of the screen to render to
+	vp.Height = FLOAT(_windowHeight);
+	vp.MinDepth = 0.0f;
+	vp.MaxDepth = 1.0f;
+	vp.TopLeftX = 0;
+	vp.TopLeftY = 0;
+	_pImmediateContext->RSSetViewports(1, &vp);	
+}
+
+void Application::CreateDepthBuffer(const UINT & sampleNum)
+{
+	//Setup depth buffer
+	D3D11_TEXTURE2D_DESC depthStencilDesc;
+	depthStencilDesc.Width = _windowWidth;
+	depthStencilDesc.Height = _windowHeight;
+	depthStencilDesc.MipLevels = 1;
+	depthStencilDesc.ArraySize = 1;
+	depthStencilDesc.Format = DXGI_FORMAT_D24_UNORM_S8_UINT;
+	depthStencilDesc.SampleDesc.Count = sampleNum;
+	depthStencilDesc.SampleDesc.Quality = 0;
+	depthStencilDesc.Usage = D3D11_USAGE_DEFAULT;
+	depthStencilDesc.BindFlags = D3D11_BIND_DEPTH_STENCIL;
+	depthStencilDesc.CPUAccessFlags = 0;
+	depthStencilDesc.MiscFlags = 0;
+	_pd3dDevice->CreateTexture2D(&depthStencilDesc, nullptr, &_depthStencilBuffer);
 }
 
 void Application::CreateBlendingEquations()
@@ -426,7 +462,7 @@ void Application::CreateBlendingEquations()
 	blendDesc.AlphaToCoverageEnable = false;
 	blendDesc.RenderTarget[0] = rtbd;
 
-	_pd3dDevice->CreateBlendState(&blendDesc, &_transparency);
+	_pd3dDevice->CreateBlendState(&blendDesc, &_blendState);
 }
 
 void Application::CreateConstantBuffer(HRESULT hr)
@@ -446,10 +482,28 @@ void Application::CreateRasterizerState(HRESULT hr)
 	//Create a Wire frame view
 	D3D11_RASTERIZER_DESC wfdesc;
 	ZeroMemory(&wfdesc, sizeof(D3D11_RASTERIZER_DESC));
-	wfdesc.FillMode = D3D11_FILL_WIREFRAME;
+	wfdesc.FillMode = D3D11_FILL_SOLID;
 	wfdesc.CullMode = D3D11_CULL_NONE;
 	hr = _pd3dDevice->CreateRasterizerState(&wfdesc, &_wireFrame);
 
+	D3D11_DEPTH_STENCIL_DESC dssDesc;
+	ZeroMemory(&dssDesc, sizeof(D3D11_DEPTH_STENCIL_DESC));
+	dssDesc.DepthEnable = true;
+	dssDesc.DepthWriteMask = D3D11_DEPTH_WRITE_MASK_ALL;
+	dssDesc.DepthFunc = D3D11_COMPARISON_LESS_EQUAL;
+	_pd3dDevice->CreateDepthStencilState(&dssDesc, &DSLessEqual);
+
+	D3D11_RASTERIZER_DESC cmdesc;
+	ZeroMemory(&cmdesc, sizeof(D3D11_RASTERIZER_DESC));
+
+	cmdesc.FillMode = D3D11_FILL_SOLID;
+	cmdesc.CullMode = D3D11_CULL_BACK;
+
+	cmdesc.FrontCounterClockwise = true;
+	hr = _pd3dDevice->CreateRasterizerState(&cmdesc, &CCWcullMode);
+
+	cmdesc.FrontCounterClockwise = false;
+	hr = _pd3dDevice->CreateRasterizerState(&cmdesc, &CWcullMode);
 	/*//No backface culling
 	D3D11_RASTERIZER_DESC noBackCull;
 	ZeroMemory(&noBackCull, sizeof(D3D11_RASTERIZER_DESC));
@@ -478,10 +532,10 @@ void Application::Cleanup()
 	if (_pd3dDevice) _pd3dDevice->Release();
 
 	// Release textures
-	if (_pfootballTexture) _pfootballTexture->Release();
+	if (_pFootballTexture) _pFootballTexture->Release();
 	if (_pBlueCarTexture) _pBlueCarTexture->Release();
 	if (_pRedCarTexture) _pRedCarTexture->Release();
-	if (_pskyBoxTexture) _pskyBoxTexture->Release();
+	if (_pSkyBoxTexture) _pSkyBoxTexture->Release();
 	if (_pCrowdTexture) _pCrowdTexture->Release();
 	if (_pPitchTexture) _pPitchTexture->Release();
 	if (_pGoalTexture) _pGoalTexture->Release();
@@ -495,7 +549,7 @@ void Application::Cleanup()
 	if (_wireFrame) _wireFrame->Release();
 
 	//Release alpha blender
-	if (_transparency) _transparency->Release();
+	if (_blendState) _blendState->Release();
 
 	if (_camera)
 	{
@@ -503,12 +557,18 @@ void Application::Cleanup()
 		_camera = nullptr;
 	}
 
+	for (Model *model : modelList)
+		if (model)
+		{
+			delete model;
+			model = nullptr;
+		}
 }
 
 void Application::Update()
 {
     // Update our time
-    static float t = 1.f/60.f;
+    const float t = 1.f/60.f;
 
 	_camera->Update();
 
@@ -516,11 +576,11 @@ void Application::Update()
 	KeyboardFunctions();
 }
 
-void Application::ObjectAnimation(float t)
+void Application::ObjectAnimation(const float& t)
 {
-	XMStoreFloat4x4(&_pitchWorld, XMMatrixScaling(30.0f, 0.0f, 30.0f) * XMMatrixTranslation(0.0f, -5.0f, 0.0f));
 	//_goalModel->ObjectAnimation(t);
 	//_footballModel->ObjectAnimation(t);
+	XMStoreFloat4x4(&_pitchWorld, XMMatrixScaling(30.0f, 0.0f, 30.0f) * XMMatrixTranslation(0.0f, -5.0f, 0.0f));
 	XMStoreFloat4x4(&_footballWorld, XMMatrixScaling(0.5f, 0.5f, 0.5f) * XMMatrixRotationX(t * 1.5) * XMMatrixRotationZ(1.5 * t));
 	XMStoreFloat4x4(&_skyBoxWorld, XMMatrixScaling(30.0f, 30.0f, 30.0f));
 	
@@ -545,6 +605,8 @@ void Application::KeyboardFunctions()
 
 void Application::Draw()
 {   
+	// "fine-tune" the blending equation
+	float blendFactor[4] = { 0.99f, 0.99f, 0.99f, 1.0f };
 
     // Clear the back buffer
     float ClearColor[4] = {0.30f, 0.20f, 0.60f, 1.0f}; // Background's RGBA values
@@ -552,35 +614,26 @@ void Application::Draw()
     _pImmediateContext->ClearRenderTargetView(_pRenderTargetView, ClearColor);	
 	_pImmediateContext->ClearDepthStencilView(_depthStencilView, D3D11_CLEAR_DEPTH | D3D11_CLEAR_STENCIL, 1.0f, 0); // Clears Depth Buffer
 
-
-	// "fine-tune" the blending equation
-	float blendFactor[4] = { 0.99f, 0.99f, 0.99f, 1.0f };
-	
 	// Sets up object textures
-	_pImmediateContext->PSSetShaderResources(0, 1, &_pfootballTexture);
-	_pImmediateContext->PSSetSamplers(0, 1, &_pSamplerLinear);
+	_pImmediateContext->IASetInputLayout(_pVertexLayout);
 
-	// Sets up world space
-	XMMATRIX redCarWorld = XMLoadFloat4x4(&_redCarWorld);
-	XMMATRIX blueCarWorld = XMLoadFloat4x4(&_blueCarWorld);
-	XMMATRIX skyBoxWorld = XMLoadFloat4x4(&_skyBoxWorld);
-	XMMATRIX footballWorld = XMLoadFloat4x4(&_footballWorld);
-	XMMATRIX pitch = XMLoadFloat4x4(&_pitchWorld);
-	XMMATRIX goal = XMLoadFloat4x4(&_goalWorld);
-	XMMATRIX goal2 = XMLoadFloat4x4(&_goalWorld2);
-	XMMATRIX crowd = XMLoadFloat4x4(&_crowdWorld);
-	XMMATRIX crowd2 = XMLoadFloat4x4(&_crowdWorld2);
-	XMMATRIX crowd3 = XMLoadFloat4x4(&_crowdWorld3);
-	XMMATRIX crowd4 = XMLoadFloat4x4(&_crowdWorld4);	
-	XMMATRIX crowd5 = XMLoadFloat4x4(&_crowdWorld5);
-	XMMATRIX crowd6 = XMLoadFloat4x4(&_crowdWorld6);
-		
+	// Set up Shaders
+	_pImmediateContext->VSSetShader(_pVertexShader, nullptr, 0);
+	_pImmediateContext->PSSetShader(_pPixelShader, nullptr, 0);
+
+	// Set up constant buffers
+	_pImmediateContext->VSSetConstantBuffers(0, 1, &_pConstantBuffer);
+	_pImmediateContext->PSSetConstantBuffers(0, 1, &_pConstantBuffer);
+
+	// _pImmediateContext->PSSetShaderResources(0, 1, &_pFootballTexture);
+	_pImmediateContext->PSSetSamplers(0, 1, &_pSamplerLinear);
+	
 	// Sets up camera view matrices
 	XMMATRIX mainView = XMLoadFloat4x4(&_camera->GetViewMatrix());
 
 	// Sets up camera projection matrices
-	XMMATRIX mainProjection = XMLoadFloat4x4(&_camera->GetProjectionMatrix());
-    
+	XMMATRIX mainProjection = XMLoadFloat4x4(&_camera->GetProjectionMatrix());    
+		
 	// Creates constant buffer
 	ConstantBuffer cb;
     
@@ -588,164 +641,153 @@ void Application::Draw()
 	cb.lightDirection = _lights->lightVecW;
 	cb.padding = _lights->padding;
 	cb.diffuseLight = _lights->diffuseLight;
-	cb.diffuseMaterial = _lights->diffuseMtrl;
 	cb.ambientLight = _lights->ambientLight;
-	cb.ambientMaterial = _lights->ambientMtrl;
 	cb.specularLight = _lights->specularLight;
-	cb.specularMaterial = _lights->specularMtrl;
 	cb.specularPower = _lights->specularPower;
 
-	// Updates camera position world position
+	// Updates camera position, view and projection
 	cb.eyePosW = _camera->GetWorldPosition();
+	cb.mView = mainView;
+	cb.mProjection = mainProjection;
 	
 	// Draws Planet
-	cb.mWorld = XMMatrixTranspose(footballWorld);
-	cb.mView = XMMatrixTranspose(mainView);
-	cb.mProjection = XMMatrixTranspose(mainProjection);
-	_pImmediateContext->UpdateSubresource(_pConstantBuffer, 0, nullptr, &cb, 0, 0);
-	// Set the default blend state (no blending) for opaque objects
-	_pImmediateContext->OMSetBlendState(0, 0, 0xffffffff);
-	// Renders planet cube 
-	_pImmediateContext->DrawIndexed(_cubeMesh.IndexCount, 0, 0);
+	// _pImmediateContext->PSSetShaderResources(0, 1, &_pFootballTexture);
+	// _pImmediateContext->PSSetSamplers(0, 1, &_pSamplerLinear);
 
-	// Draws Sky Box
-	cb.mWorld = XMMatrixTranspose(skyBoxWorld);
-	cb.mView = XMMatrixTranspose(mainView);
-	cb.mProjection = XMMatrixTranspose(mainProjection);
-	// Sets up object textures
-	_pImmediateContext->PSSetShaderResources(0, 1, &_pskyBoxTexture);
-	_pImmediateContext->PSSetSamplers(0, 1, &_pSamplerLinear);
-	_pImmediateContext->UpdateSubresource(_pConstantBuffer, 0, nullptr, &cb, 0, 0);
-	// Set the default blend state (no blending) for opaque objects
-	_pImmediateContext->OMSetBlendState(_transparency, blendFactor, 0xffffffff);
+	for (Model *model : modelList)
+	{
+		const auto material = model->GetMaterial();
+		cb.diffuseMaterial = material.diffuse;
+		cb.ambientMaterial = material.ambient;
+		cb.specularMaterial = material.specular;
+
+		cb.mWorld = XMMatrixTranspose(model->GetMatrix());
+
+		if (model->HasTexture())
+		{
+			auto *tRV = model->GetTextureRV();
+			_pImmediateContext->PSSetShaderResources(0, 1, &tRV);
+			cb.hasTexture = 1.f;
+		}
+		else
+			cb.hasTexture = .0f;
+
+		_pImmediateContext->UpdateSubresource(_pConstantBuffer, 0, nullptr, &cb, 0, 0);
+
+		model->Draw(_pImmediateContext, _blendState, false);
+	}
 	
-	_pImmediateContext->DrawIndexed(_cubeMesh.IndexCount, 0, 0);
+	// _pImmediateContext->IASetVertexBuffers(0,1,&_pCubeVertexBuffer,&_vert)
+	// _pImmediateContext->OMSetBlendState(nullptr, nullptr, 0xffffffff);	// Set the default blend state (no blending) for opaque objects
+	// _pImmediateContext->DrawIndexed(_cubeMesh.IndexCount, 0, 0); // Renders planet cube 
 
-
-	// Draws Pitch
-	cb.mWorld = XMMatrixTranspose(pitch);
-	cb.mView = XMMatrixTranspose(mainView);
-	cb.mProjection = XMMatrixTranspose(mainProjection);
-	// Sets up object textures
-	_pImmediateContext->PSSetShaderResources(0, 1, &_pPitchTexture);
-	_pImmediateContext->PSSetSamplers(0, 1, &_pSamplerLinear);
-	_pImmediateContext->UpdateSubresource(_pConstantBuffer, 0, nullptr, &cb, 0, 0);
-	// Set the blend state for transparent objects
-	_pImmediateContext->OMSetBlendState(0, 0, 0xffffffff);
-	// Renders Extra
-	_pImmediateContext->DrawIndexed(_skyBox.IndexCount, 0, 0);	
-
-	// Draws Goal
-	cb.mWorld = XMMatrixTranspose(goal);
-	cb.mView = XMMatrixTranspose(mainView);
-	cb.mProjection = XMMatrixTranspose(mainProjection);
-	// Sets up object textures
-	_pImmediateContext->PSSetShaderResources(0, 1, &_pGoalTexture);
-	_pImmediateContext->PSSetSamplers(0, 1, &_pSamplerLinear);
-	_pImmediateContext->UpdateSubresource(_pConstantBuffer, 0, nullptr, &cb, 0, 0);
-	// Set the blend state for transparent objects
-	_pImmediateContext->OMSetBlendState(0, 0, 0xffffffff);
-	// Renders Extra
-	_pImmediateContext->DrawIndexed(_skyBox.IndexCount, 0, 0);
-
-	// Draws Goal
-	cb.mWorld = XMMatrixTranspose(goal2);
-	cb.mView = XMMatrixTranspose(mainView);
-	cb.mProjection = XMMatrixTranspose(mainProjection);
-	// Sets up object textures
-	_pImmediateContext->PSSetShaderResources(0, 1, &_pGoalTexture);
-	_pImmediateContext->PSSetSamplers(0, 1, &_pSamplerLinear);
-	_pImmediateContext->UpdateSubresource(_pConstantBuffer, 0, nullptr, &cb, 0, 0);
-	// Set the blend state for transparent objects
-	_pImmediateContext->OMSetBlendState(0, 0, 0xffffffff);
-	// Renders Extra
-	_pImmediateContext->DrawIndexed(_skyBox.IndexCount, 0, 0);
-
-	// Draws crowd
-	cb.mWorld = XMMatrixTranspose(crowd);
-	cb.mView = XMMatrixTranspose(mainView);
-	cb.mProjection = XMMatrixTranspose(mainProjection);
-	// Sets up object textures
-	_pImmediateContext->PSSetShaderResources(0, 1, &_pskyBoxTexture);
-	_pImmediateContext->PSSetSamplers(0, 1, &_pSamplerLinear);
-	_pImmediateContext->UpdateSubresource(_pConstantBuffer, 0, nullptr, &cb, 0, 0);
-	// Set the default blend state (no blending) for opaque objects
-	_pImmediateContext->OMSetBlendState(_transparency, blendFactor, 0xffffffff);
-
-	
-	_pImmediateContext->DrawIndexed(_cubeMesh.IndexCount, 0, 0);
-
-
-	// Draws crowd
-	cb.mWorld = XMMatrixTranspose(crowd2);
-	cb.mView = XMMatrixTranspose(mainView);
-	cb.mProjection = XMMatrixTranspose(mainProjection);
-	// Sets up object textures
-	_pImmediateContext->PSSetShaderResources(0, 1, &_pskyBoxTexture);
-	_pImmediateContext->PSSetSamplers(0, 1, &_pSamplerLinear);
-	_pImmediateContext->UpdateSubresource(_pConstantBuffer, 0, nullptr, &cb, 0, 0);
-	// Set the default blend state (no blending) for opaque objects
-	_pImmediateContext->OMSetBlendState(_transparency, blendFactor, 0xffffffff);
-
-
-	_pImmediateContext->DrawIndexed(_cubeMesh.IndexCount, 0, 0);
-	
-
-	// Draws crowd
-	cb.mWorld = XMMatrixTranspose(crowd3);
-	cb.mView = XMMatrixTranspose(mainView);
-	cb.mProjection = XMMatrixTranspose(mainProjection);
-	// Sets up object textures
-	_pImmediateContext->PSSetShaderResources(0, 1, &_pskyBoxTexture);
-	_pImmediateContext->PSSetSamplers(0, 1, &_pSamplerLinear);
-	_pImmediateContext->UpdateSubresource(_pConstantBuffer, 0, nullptr, &cb, 0, 0);
-	// Set the default blend state (no blending) for opaque objects
-	_pImmediateContext->OMSetBlendState(_transparency, blendFactor, 0xffffffff);
-
-
-	_pImmediateContext->DrawIndexed(_cubeMesh.IndexCount, 0, 0);
-
-	// Draws crowd
-	cb.mWorld = XMMatrixTranspose(crowd4);
-	cb.mView = XMMatrixTranspose(mainView);
-	cb.mProjection = XMMatrixTranspose(mainProjection);
-	// Sets up object textures
-	_pImmediateContext->PSSetShaderResources(0, 1, &_pskyBoxTexture);
-	_pImmediateContext->PSSetSamplers(0, 1, &_pSamplerLinear);
-	_pImmediateContext->UpdateSubresource(_pConstantBuffer, 0, nullptr, &cb, 0, 0);
-	// Set the default blend state (no blending) for opaque objects
-	_pImmediateContext->OMSetBlendState(_transparency, blendFactor, 0xffffffff);
-
-
-	_pImmediateContext->DrawIndexed(_cubeMesh.IndexCount, 0, 0);
-
-
-	// Draws crowd
-	cb.mWorld = XMMatrixTranspose(crowd5);
-	cb.mView = XMMatrixTranspose(mainView);
-	cb.mProjection = XMMatrixTranspose(mainProjection);
-	// Sets up object textures
-	_pImmediateContext->PSSetShaderResources(0, 1, &_pskyBoxTexture);
-	_pImmediateContext->PSSetSamplers(0, 1, &_pSamplerLinear);
-	_pImmediateContext->UpdateSubresource(_pConstantBuffer, 0, nullptr, &cb, 0, 0);
-	// Set the default blend state (no blending) for opaque objects
-	_pImmediateContext->OMSetBlendState(_transparency, blendFactor, 0xffffffff);
-
-
-	_pImmediateContext->DrawIndexed(_cubeMesh.IndexCount, 0, 0);
-
-
-	// Draws crowd
-	cb.mWorld = XMMatrixTranspose(crowd6);
-	cb.mView = XMMatrixTranspose(mainView);
-	cb.mProjection = XMMatrixTranspose(mainProjection);
-	// Sets up object textures
-	_pImmediateContext->PSSetShaderResources(0, 1, &_pskyBoxTexture);
-	_pImmediateContext->PSSetSamplers(0, 1, &_pSamplerLinear);
-	_pImmediateContext->UpdateSubresource(_pConstantBuffer, 0, nullptr, &cb, 0, 0);
-	// Set the default blend state (no blending) for opaque objects
-	_pImmediateContext->OMSetBlendState(_transparency, blendFactor, 0xffffffff);
-	_pImmediateContext->DrawIndexed(_cubeMesh.IndexCount, 0, 0);
+	// // Draws Sky Box
+	// cb.mWorld = XMMatrixTranspose(skyBoxWorld);
+	// // Sets up object textures
+	// _pImmediateContext->PSSetShaderResources(0, 1, &_pSkyBoxTexture);
+	// _pImmediateContext->PSSetSamplers(0, 1, &_pSamplerLinear);
+	// _pImmediateContext->UpdateSubresource(_pConstantBuffer, 0, nullptr, &cb, 0, 0);
+	// // Set the default blend state (no blending) for opaque objects
+	// _pImmediateContext->OMSetBlendState(_blendState, blendFactor, 0xffffffff);	
+	// _pImmediateContext->DrawIndexed(_cubeMesh.IndexCount, 0, 0);
+	//
+	//
+	// // Draws Pitch
+	// cb.mWorld = XMMatrixTranspose(pitch);
+	// // Sets up object textures
+	// _pImmediateContext->PSSetShaderResources(0, 1, &_pPitchTexture);
+	// _pImmediateContext->PSSetSamplers(0, 1, &_pSamplerLinear);
+	// _pImmediateContext->UpdateSubresource(_pConstantBuffer, 0, nullptr, &cb, 0, 0);
+	// // Set the blend state for transparent objects
+	// _pImmediateContext->OMSetBlendState(0, 0, 0xffffffff);
+	// // Renders Extra
+	// _pImmediateContext->DrawIndexed(_skyBox.IndexCount, 0, 0);	
+	//
+	// // Draws Goal
+	// cb.mWorld = XMMatrixTranspose(goal);
+	// // Sets up object textures
+	// _pImmediateContext->PSSetShaderResources(0, 1, &_pGoalTexture);
+	// _pImmediateContext->PSSetSamplers(0, 1, &_pSamplerLinear);
+	// _pImmediateContext->UpdateSubresource(_pConstantBuffer, 0, nullptr, &cb, 0, 0);
+	// // Set the blend state for transparent objects
+	// _pImmediateContext->OMSetBlendState(0, 0, 0xffffffff);
+	// // Renders Extra
+	// _pImmediateContext->DrawIndexed(_skyBox.IndexCount, 0, 0);
+	//
+	// // Draws Goal
+	// cb.mWorld = XMMatrixTranspose(goal2);
+	// // Sets up object textures
+	// _pImmediateContext->PSSetShaderResources(0, 1, &_pGoalTexture);
+	// _pImmediateContext->PSSetSamplers(0, 1, &_pSamplerLinear);
+	// _pImmediateContext->UpdateSubresource(_pConstantBuffer, 0, nullptr, &cb, 0, 0);
+	// // Set the blend state for transparent objects
+	// _pImmediateContext->OMSetBlendState(0, 0, 0xffffffff);
+	// // Renders Extra
+	// _pImmediateContext->DrawIndexed(_skyBox.IndexCount, 0, 0);
+	//
+	// // Draws crowd
+	// cb.mWorld = XMMatrixTranspose(crowd);
+	// // Sets up object textures
+	// _pImmediateContext->PSSetShaderResources(0, 1, &_pSkyBoxTexture);
+	// _pImmediateContext->PSSetSamplers(0, 1, &_pSamplerLinear);
+	// _pImmediateContext->UpdateSubresource(_pConstantBuffer, 0, nullptr, &cb, 0, 0);
+	// // Set the default blend state (no blending) for opaque objects
+	// _pImmediateContext->OMSetBlendState(_blendState, blendFactor, 0xffffffff);	
+	// _pImmediateContext->DrawIndexed(_cubeMesh.IndexCount, 0, 0);
+	//
+	//
+	// // Draws crowd
+	// cb.mWorld = XMMatrixTranspose(crowd2);
+	// // Sets up object textures
+	// _pImmediateContext->PSSetShaderResources(0, 1, &_pSkyBoxTexture);
+	// _pImmediateContext->PSSetSamplers(0, 1, &_pSamplerLinear);
+	// _pImmediateContext->UpdateSubresource(_pConstantBuffer, 0, nullptr, &cb, 0, 0);
+	// // Set the default blend state (no blending) for opaque objects
+	// _pImmediateContext->OMSetBlendState(_blendState, blendFactor, 0xffffffff);
+	// _pImmediateContext->DrawIndexed(_cubeMesh.IndexCount, 0, 0);
+	//
+	//
+	// // Draws crowd
+	// cb.mWorld = XMMatrixTranspose(crowd3);
+	// // Sets up object textures
+	// _pImmediateContext->PSSetShaderResources(0, 1, &_pSkyBoxTexture);
+	// _pImmediateContext->PSSetSamplers(0, 1, &_pSamplerLinear);
+	// _pImmediateContext->UpdateSubresource(_pConstantBuffer, 0, nullptr, &cb, 0, 0);
+	// // Set the default blend state (no blending) for opaque objects
+	// _pImmediateContext->OMSetBlendState(_blendState, blendFactor, 0xffffffff);
+	// _pImmediateContext->DrawIndexed(_cubeMesh.IndexCount, 0, 0);
+	//
+	// // Draws crowd
+	// cb.mWorld = XMMatrixTranspose(crowd4);
+	// // Sets up object textures
+	// _pImmediateContext->PSSetShaderResources(0, 1, &_pSkyBoxTexture);
+	// _pImmediateContext->PSSetSamplers(0, 1, &_pSamplerLinear);
+	// _pImmediateContext->UpdateSubresource(_pConstantBuffer, 0, nullptr, &cb, 0, 0);
+	// // Set the default blend state (no blending) for opaque objects
+	// _pImmediateContext->OMSetBlendState(_blendState, blendFactor, 0xffffffff);
+	// _pImmediateContext->DrawIndexed(_cubeMesh.IndexCount, 0, 0);
+	//
+	//
+	// // Draws crowd
+	// cb.mWorld = XMMatrixTranspose(crowd5);
+	// // Sets up object textures
+	// _pImmediateContext->PSSetShaderResources(0, 1, &_pSkyBoxTexture);
+	// _pImmediateContext->PSSetSamplers(0, 1, &_pSamplerLinear);
+	// _pImmediateContext->UpdateSubresource(_pConstantBuffer, 0, nullptr, &cb, 0, 0);
+	// // Set the default blend state (no blending) for opaque objects
+	// _pImmediateContext->OMSetBlendState(_blendState, blendFactor, 0xffffffff);
+	// _pImmediateContext->DrawIndexed(_cubeMesh.IndexCount, 0, 0);
+	//
+	//
+	// // Draws crowd
+	// cb.mWorld = XMMatrixTranspose(crowd6);
+	// // Sets up object textures
+	// _pImmediateContext->PSSetShaderResources(0, 1, &_pSkyBoxTexture);
+	// _pImmediateContext->PSSetSamplers(0, 1, &_pSamplerLinear);
+	// _pImmediateContext->UpdateSubresource(_pConstantBuffer, 0, nullptr, &cb, 0, 0);
+	// // Set the default blend state (no blending) for opaque objects
+	// _pImmediateContext->OMSetBlendState(_blendState, blendFactor, 0xffffffff);
+	// _pImmediateContext->DrawIndexed(_cubeMesh.IndexCount, 0, 0);
 
 	// Present our back buffer to our front buffer
     _pSwapChain->Present(1, 0);

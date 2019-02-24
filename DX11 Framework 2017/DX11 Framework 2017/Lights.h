@@ -21,9 +21,7 @@ public:
 	XMFLOAT4 ambientMtrl;
 	XMFLOAT4 ambientLight;
 
-	//
-	//Specular
-	//
+	//Specular	
 	XMFLOAT4 specularMtrl;
 	XMFLOAT4 specularLight;
 	float specularPower;

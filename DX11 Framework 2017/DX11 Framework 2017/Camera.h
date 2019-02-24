@@ -32,15 +32,15 @@ private:
 	void RightTurn();
 	void UpwardTurn();
 	void DownwardTurn();
+	
+	// Camera Movement method
+	void Movement();
+	void RecalculateCamera();
 
 public:
 	Camera(const UINT &windowHeight, const UINT &windowWidth);
 	void Release();
-
-	// Camera Movement method
-	void Movement();
 	void Update();
-	void RecalculateCamera();
 
 	// Variables Getters & Setters 
 	void SetWorldPosition(const XMFLOAT3& eyePos);

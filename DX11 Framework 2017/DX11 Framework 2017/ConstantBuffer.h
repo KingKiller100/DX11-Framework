@@ -25,5 +25,7 @@ struct ConstantBuffer
 	XMFLOAT4 specularLight;
 	float specularPower;
 	XMFLOAT3 eyePosW; 	// Camera position in world space
+
+	float hasTexture;
 };
 

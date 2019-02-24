@@ -1,23 +1,14 @@
-﻿FXC : warning X4717: Effects deprecated for D3DCompiler_47
-C:\Users\d012120g\Documents\DX11-Framework\DX11 Framework 2017\DX11 Framework 2017\DX11 Framework.fx(116,16-50): warning X3206: implicit truncation of vector type
-  
-  compilation object save succeeded; see C:\Users\d012120g\Documents\DX11-Framework\DX11 Framework 2017\DX11 Framework 2017\Debug\DX11 Framework.cso
-  Application.cpp
-c:\users\d012120g\documents\dx11-framework\dx11 framework 2017\dx11 framework 2017\application.cpp(97): warning C4316: 'Camera': object allocated on the heap may not be aligned 16
-c:\users\d012120g\documents\dx11-framework\dx11 framework 2017\dx11 framework 2017\application.cpp(207): warning C4838: conversion from 'double' to 'LONG' requires a narrowing conversion
-c:\users\d012120g\documents\dx11-framework\dx11 framework 2017\dx11 framework 2017\application.cpp(207): warning C4244: 'initializing': conversion from 'double' to 'LONG', possible loss of data
-c:\users\d012120g\documents\dx11-framework\dx11 framework 2017\dx11 framework 2017\application.cpp(531): warning C4244: 'argument': conversion from 'double' to 'float', possible loss of data
-c:\users\d012120g\documents\dx11-framework\dx11 framework 2017\dx11 framework 2017\application.cpp(581): warning C4238: nonstandard extension used: class rvalue used as lvalue
-c:\users\d012120g\documents\dx11-framework\dx11 framework 2017\dx11 framework 2017\application.cpp(584): warning C4238: nonstandard extension used: class rvalue used as lvalue
-  Camera.cpp
+﻿  Application.cpp
+c:\users\d012120g\documents\dx11-framework\dx11 framework 2017\dx11 framework 2017\application.cpp(140): warning C4316: 'Model': object allocated on the heap may not be aligned 16
+c:\users\d012120g\documents\dx11-framework\dx11 framework 2017\dx11 framework 2017\application.cpp(145): warning C4316: 'Model': object allocated on the heap may not be aligned 16
+c:\users\d012120g\documents\dx11-framework\dx11 framework 2017\dx11 framework 2017\application.cpp(154): warning C4316: 'Camera': object allocated on the heap may not be aligned 16
+c:\users\d012120g\documents\dx11-framework\dx11 framework 2017\dx11 framework 2017\application.cpp(264): warning C4838: conversion from 'double' to 'LONG' requires a narrowing conversion
+c:\users\d012120g\documents\dx11-framework\dx11 framework 2017\dx11 framework 2017\application.cpp(264): warning C4244: 'initializing': conversion from 'double' to 'LONG', possible loss of data
+c:\users\d012120g\documents\dx11-framework\dx11 framework 2017\dx11 framework 2017\application.cpp(584): warning C4244: 'argument': conversion from 'double' to 'float', possible loss of data
+c:\users\d012120g\documents\dx11-framework\dx11 framework 2017\dx11 framework 2017\application.cpp(632): warning C4238: nonstandard extension used: class rvalue used as lvalue
+c:\users\d012120g\documents\dx11-framework\dx11 framework 2017\dx11 framework 2017\application.cpp(635): warning C4238: nonstandard extension used: class rvalue used as lvalue
   DX11 Framework.cpp
-  ImageLoader.cpp
-  Lights.cpp
   Model.cpp
-c:\users\d012120g\documents\dx11-framework\dx11 framework 2017\dx11 framework 2017\model.cpp(58): warning C4238: nonstandard extension used: class rvalue used as lvalue
-c:\users\d012120g\documents\dx11-framework\dx11 framework 2017\dx11 framework 2017\model.cpp(61): warning C4238: nonstandard extension used: class rvalue used as lvalue
-c:\users\d012120g\documents\dx11-framework\dx11 framework 2017\dx11 framework 2017\model.cpp(50): warning C4100: 'transparency': unreferenced formal parameter
-  OBJLoader.cpp
+c:\users\d012120g\documents\dx11-framework\dx11 framework 2017\dx11 framework 2017\model.cpp(13): warning C4100: 'deltaTime': unreferenced formal parameter
   Generating Code...
-Application.obj : warning LNK4075: ignoring '/EDITANDCONTINUE' due to '/SAFESEH' specification
   DX11 Framework.vcxproj -> C:\Users\d012120g\Documents\DX11-Framework\DX11 Framework 2017\DX11 Framework 2017\Debug\DX11 Framework.exe

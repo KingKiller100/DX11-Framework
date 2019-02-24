@@ -1,5 +1,6 @@
 #include "Camera.h"
 #include <ios>
+#define FORWARDMOVEMENT XMVector3TransformCoord(forwardVector, rotationMatrix)
 
 Camera::Camera(const UINT &windowHeight, const UINT &windowWidth) : _WindowHeight(windowHeight), _WindowWidth(windowWidth)
 {
@@ -91,24 +92,23 @@ void Camera::Update()
 	// Initialize the projection matrix
 	XMStoreFloat4x4(&projection, XMMatrixPerspectiveFovLH(XM_PIDIV2, _WindowWidth / FLOAT(_WindowHeight), 0.01f, 100.0f));
 }
-
 void Camera::RecalculateCamera()
 {
-	const auto forwardVector = XMVectorSet(0, 0, 1, 0);
-	const auto horizonalVector = XMVectorSet(1, 0, 0, 0);
-	const auto verticalVector = XMVectorSet(0, 1, 0, 0);
+	static auto forwardVector = XMVectorSet(0, 0, 1, 0);
+	static auto horizontalVector = XMVectorSet(1, 0, 0, 0);
+	static auto verticalVector = XMVectorSet(0, 1, 0, 0);
 
 	const auto rotationMatrix = XMMatrixRotationRollPitchYaw(rotationX, rotationY, 0);
 	auto target = XMVector3TransformCoord(forwardVector, rotationMatrix);
 	target = XMVector3Normalize(target);
 
-	const auto camHorizontal = XMVector3TransformCoord(horizonalVector, rotationMatrix);
-	const auto camForward = XMVector3TransformCoord(forwardVector, rotationMatrix);
+	const auto camHorizontal = XMVector3TransformCoord(horizontalVector, rotationMatrix);
+	// const auto camForward = ;
 
 	position += turnSpeed * camHorizontal;
 
-	position += forwardMoveSpeed * camForward;
-	position -= backwardMoveSpeed * camForward;
+	position += forwardMoveSpeed * FORWARDMOVEMENT;
+	position -= backwardMoveSpeed * FORWARDMOVEMENT;
 
 	position += ascendingSpeed * verticalVector;
 	position -= descendingSpeed * verticalVector;
