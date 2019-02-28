@@ -92,6 +92,7 @@ void Camera::Update()
 	// Initialize the projection matrix
 	XMStoreFloat4x4(&projection, XMMatrixPerspectiveFovLH(XM_PIDIV2, _WindowWidth / FLOAT(_WindowHeight), 0.01f, 100.0f));
 }
+
 void Camera::RecalculateCamera()
 {
 	static auto forwardVector = XMVectorSet(0, 0, 1, 0);

@@ -142,7 +142,7 @@ HRESULT Application::Initialise(HINSTANCE hInstance, int nCmdShow)
 	cubeModel->SetMatrix(blueCarWorld);
 	modelList.emplace_back(cubeModel);
 
-	Model *skyBoxModel = new Model(_skyBox, shinyMaterial);
+	Model *skyBoxModel = new Model(_footballMesh, shinyMaterial);
 	skyBoxModel->SetTextureRV(_pSkyBoxTexture);
 	skyBoxModel->SetMatrix(skyBoxWorld);
 	modelList.emplace_back(skyBoxModel);
@@ -654,7 +654,7 @@ void Application::Draw()
 	// _pImmediateContext->PSSetShaderResources(0, 1, &_pFootballTexture);
 	// _pImmediateContext->PSSetSamplers(0, 1, &_pSamplerLinear);
 
-	for (Model *model : modelList)
+	for (auto model : modelList)
 	{
 		const auto material = model->GetMaterial();
 		cb.diffuseMaterial = material.diffuse;

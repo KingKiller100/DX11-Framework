@@ -111,7 +111,7 @@ float4 PS( VS_OUTPUT input ) : SV_Target
 
 	float4 colour;
 
-	// Multiply the texture colour to the sum of amient and diffuse lighting then 
+	// Multiply the texture colour to the sum of ambient and diffuse lighting then 
 	// add finally add on specular light and copy over the diffuse alpha.
 	colour.rgb = (textureColour * (ambient + diffuse)) + specular;
 	colour.a = diffuseMtrl.a;
